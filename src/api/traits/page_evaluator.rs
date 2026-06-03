@@ -1,4 +1,4 @@
-use crate::Rect;
+use crate::api::Rect;
 
 /// Evaluate JavaScript in a live browser page and query the DOM.
 ///

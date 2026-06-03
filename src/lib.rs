@@ -23,10 +23,9 @@
 //! client.navigate("https://example.com/other").unwrap();
 //! ```
 
+mod api;
 mod client;
-mod evaluator;
-mod rect;
+mod core;
+mod saf;
 
-pub use client::CdpClient;
-pub use evaluator::PageEvaluator;
-pub use rect::Rect;
+pub use api::{CdpClient, CdpClientBuilder, PageEvaluator, Rect, Validator};

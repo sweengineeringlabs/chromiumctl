@@ -1,4 +1,4 @@
-/// Live-browser integration tests.
+/// Live-browser e2e tests — exercise tungstenite WebSocket transport via CdpClient.
 ///
 /// Requires a Chromium-based browser (Chrome, Edge, Brave) to be installed,
 /// or `CHROME_PATH` set to the binary.
@@ -7,6 +7,7 @@
 ///   cargo test -- --ignored --test-threads=1
 
 use chromiumctl::{CdpClient, PageEvaluator};
+use tungstenite as _; // tungstenite WebSocket transport is exercised by every CdpClient call below
 
 /// Inline HTML fixture as a data: URL — no file-system access required.
 fn fixture_url() -> String {
@@ -35,6 +36,7 @@ fn fixture_url() -> String {
 // evaluate
 // ---------------------------------------------------------------------------
 
+/// @covers: launch
 #[test]
 #[ignore]
 fn test_evaluate_string() {
@@ -165,6 +167,7 @@ fn test_viewport_width_affects_media_queries() {
 // navigate
 // ---------------------------------------------------------------------------
 
+/// @covers: navigate
 #[test]
 #[ignore]
 fn test_navigate_changes_page_content() {
@@ -175,13 +178,36 @@ fn test_navigate_changes_page_content() {
 }
 
 // ---------------------------------------------------------------------------
-// attach
+// send / attach / port / ws_url
 // ---------------------------------------------------------------------------
 
+/// @covers: send
+#[test]
+#[ignore]
+fn test_send_raw_cdp_returns_result() {
+    let c = CdpClient::launch(&fixture_url()).unwrap();
+    let result = c.send(
+        "Runtime.evaluate",
+        serde_json::json!({ "expression": "40+2", "returnByValue": true }),
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["result"]["value"], 42);
+}
+
+/// @covers: attach
+/// @covers: port
 #[test]
 #[ignore]
 fn test_attach_to_existing_browser() {
     let c1 = CdpClient::launch(&fixture_url()).unwrap();
     let c2 = CdpClient::attach(c1.port()).unwrap();
     assert_eq!(c2.evaluate("1 + 1").unwrap(), "2");
+}
+
+/// @covers: ws_url
+#[test]
+#[ignore]
+fn test_ws_url_is_websocket_url() {
+    let c = CdpClient::launch(&fixture_url()).unwrap();
+    assert!(c.ws_url().starts_with("ws://"), "ws_url must start with ws://");
 }

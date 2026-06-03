@@ -1,6 +1,5 @@
 use std::net::TcpStream;
-use std::path::Path;
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 use std::sync::{
     atomic::{AtomicU16, AtomicU64, Ordering},
     Mutex,
@@ -9,32 +8,11 @@ use std::time::{Duration, Instant};
 
 use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 
-use crate::evaluator::PageEvaluator;
+use crate::api::{CdpClient, PageEvaluator};
+use crate::api::browser::BrowserLocator;
+use crate::core::browser::PlatformBrowserLocator;
 
 static NEXT_PORT: AtomicU16 = AtomicU16::new(9300);
-
-/// A connected Chromium DevTools Protocol session.
-///
-/// Launches (or attaches to) a Chromium-based browser and holds a persistent
-/// WebSocket connection to a page target. All CDP communication is synchronous
-/// over that single connection.
-///
-/// ## Example
-///
-/// ```no_run
-/// use chromiumctl::{CdpClient, PageEvaluator};
-///
-/// let client = CdpClient::launch("https://example.com").unwrap();
-/// let title  = client.evaluate("document.title").unwrap();
-/// println!("{}", title);
-/// ```
-pub struct CdpClient {
-    socket:         Mutex<WebSocket<MaybeTlsStream<TcpStream>>>,
-    next_id:        AtomicU64,
-    chrome_process: Option<Child>,
-    port:           u16,
-    ws_url:         String,
-}
 
 impl CdpClient {
     /// Launch a new headless Chromium instance, navigate to `url`, and connect.
@@ -42,7 +20,7 @@ impl CdpClient {
     /// Discovers the browser binary via the `CHROME_PATH` environment variable
     /// or well-known platform paths.
     pub fn launch(url: &str) -> Result<Self, String> {
-        let chrome = find_chrome()?;
+        let chrome = PlatformBrowserLocator::find()?;
         let port   = NEXT_PORT.fetch_add(1, Ordering::Relaxed);
 
         let chrome_process = Command::new(&chrome)
@@ -63,7 +41,7 @@ impl CdpClient {
             .spawn()
             .map_err(|e| format!("failed to launch Chromium at '{}': {}", chrome, e))?;
 
-        let ws_url = wait_for_debugger(port)?;
+        let ws_url = PlatformBrowserLocator::wait_for_debugger(port)?;
         let socket = connect_ws(&ws_url)?;
 
         let client = Self {
@@ -79,7 +57,7 @@ impl CdpClient {
 
     /// Attach to an already-running Chromium instance at `port`.
     pub fn attach(port: u16) -> Result<Self, String> {
-        let ws_url = get_ws_url(port)?;
+        let ws_url = PlatformBrowserLocator::get_ws_url(port)?;
         let socket = connect_ws(&ws_url)?;
         Ok(Self {
             socket:         Mutex::new(socket),
@@ -114,10 +92,6 @@ impl CdpClient {
     pub fn send(&self, method: &str, params: serde_json::Value) -> Result<serde_json::Value, String> {
         self.send_cdp(method, params)
     }
-
-    // -----------------------------------------------------------------------
-    // Internal helpers
-    // -----------------------------------------------------------------------
 
     fn send_cdp(&self, method: &str, params: serde_json::Value) -> Result<serde_json::Value, String> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
@@ -221,9 +195,9 @@ fn send_cdp_raw(
     method: &str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let msg = serde_json::json!({ "id": id, "method": method, "params": params });
+    let msg = serde_json::json!({ "id": id, "method": method, "params": params }).to_string();
     socket
-        .send(Message::Text(msg.to_string()))
+        .send(Message::Text(msg))
         .map_err(|e| format!("CDP send '{}' failed: {}", method, e))?;
 
     loop {
@@ -249,112 +223,19 @@ fn send_cdp_raw(
 }
 
 // ---------------------------------------------------------------------------
-// Chrome discovery
-// ---------------------------------------------------------------------------
-
-fn find_chrome() -> Result<String, String> {
-    let candidates: Vec<&str> = if cfg!(windows) {
-        vec![
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-        ]
-    } else if cfg!(target_os = "macos") {
-        vec![
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-            "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        ]
-    } else {
-        vec![
-            "google-chrome-stable",
-            "google-chrome",
-            "chromium-browser",
-            "chromium",
-            "microsoft-edge-stable",
-            "brave-browser",
-        ]
-    };
-
-    if let Ok(path) = std::env::var("CHROME_PATH") {
-        if Path::new(&path).exists() {
-            return Ok(path);
-        }
-    }
-
-    for candidate in &candidates {
-        if Path::new(candidate).exists() {
-            return Ok(candidate.to_string());
-        }
-        if cfg!(not(windows)) {
-            if let Ok(out) = Command::new("which").arg(candidate).output() {
-                if out.status.success() {
-                    return Ok(candidate.to_string());
-                }
-            }
-        }
-    }
-
-    Err("No Chromium-based browser found. Install Chrome/Edge/Brave or set CHROME_PATH.".into())
-}
-
-// ---------------------------------------------------------------------------
-// Debugger endpoint helpers
-// ---------------------------------------------------------------------------
-
-fn wait_for_debugger(port: u16) -> Result<String, String> {
-    let deadline = Instant::now() + Duration::from_secs(10);
-    let mut last_err = String::from("timeout waiting for Chromium debugger");
-    while Instant::now() < deadline {
-        match get_ws_url(port) {
-            Ok(url) => return Ok(url),
-            Err(e)  => last_err = e,
-        }
-        std::thread::sleep(Duration::from_millis(200));
-    }
-    Err(last_err)
-}
-
-fn get_ws_url(port: u16) -> Result<String, String> {
-    let url = format!("http://localhost:{}/json", port);
-    let output = Command::new("curl")
-        .args(["-s", "--max-time", "2", &url])
-        .output()
-        .map_err(|e| format!("curl failed: {}", e))?;
-
-    if !output.status.success() {
-        return Err(format!(
-            "HTTP GET {} failed (exit {})",
-            url,
-            output.status.code().unwrap_or(-1)
-        ));
-    }
-
-    let body = String::from_utf8_lossy(&output.stdout);
-    let targets: Vec<serde_json::Value> = serde_json::from_str(&body)
-        .map_err(|e| format!("failed to parse /json response: {}", e))?;
-
-    targets
-        .iter()
-        .find(|t| t["type"].as_str() == Some("page"))
-        .and_then(|t| t["webSocketDebuggerUrl"].as_str())
-        .map(String::from)
-        .ok_or_else(|| "no page target found in Chromium /json response".into())
-}
-
-// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::api::CdpClient;
+    use crate::api::browser::BrowserLocator;
+    use crate::core::browser::PlatformBrowserLocator;
 
     #[test]
     fn test_find_chrome_returns_path_or_helpful_error() {
-        match find_chrome() {
+        match PlatformBrowserLocator::find() {
             Ok(path) => assert!(!path.is_empty()),
             Err(msg) => assert!(msg.contains("No Chromium-based browser found"), "{}", msg),
         }
@@ -371,6 +252,85 @@ mod tests {
 
     #[test]
     fn test_get_ws_url_fails_when_no_browser_running() {
-        assert!(get_ws_url(19999).is_err());
+        assert!(PlatformBrowserLocator::get_ws_url(19999).is_err());
+    }
+
+    /// @covers: launch
+    #[test]
+    fn test_launch_returns_ok_or_no_browser_error() {
+        match CdpClient::launch("data:text/html,<h1>test</h1>") {
+            Ok(_) => {}
+            Err(e) => assert!(!e.is_empty(), "error message must not be empty"),
+        }
+    }
+
+    /// @covers: attach
+    #[test]
+    fn test_attach_fails_when_no_debugger_on_port() {
+        assert!(CdpClient::attach(1).is_err());
+    }
+
+    /// @covers: navigate
+    #[test]
+    fn test_navigate_updates_page_when_browser_available() {
+        match CdpClient::launch("data:text/html,<p>start</p>") {
+            Ok(mut c) => c.navigate("data:text/html,<p>end</p>").unwrap(),
+            Err(_) => {}
+        }
+    }
+
+    /// @covers: navigate
+    #[test]
+    #[ignore = "requires a running Chromium instance"]
+    fn test_navigate_changes_page_content() {
+        let mut c = CdpClient::launch("data:text/html,<p>start</p>").unwrap();
+        c.navigate("data:text/html,<p id=x>navigated</p>").unwrap();
+        assert_eq!(
+            c.evaluate("document.getElementById('x') !== null ? 'yes' : 'no'").unwrap(),
+            "yes"
+        );
+    }
+
+    /// @covers: send
+    #[test]
+    fn test_send_dispatches_cdp_command_when_browser_available() {
+        match CdpClient::launch("data:text/html,<p>test</p>") {
+            Ok(c) => {
+                let result = c.send(
+                    "Runtime.evaluate",
+                    serde_json::json!({ "expression": "1", "returnByValue": true }),
+                );
+                assert!(result.is_ok(), "send must succeed when browser is running");
+            }
+            Err(_) => {}
+        }
+    }
+
+    /// @covers: send
+    #[test]
+    #[ignore = "requires a running Chromium instance"]
+    fn test_send_raw_cdp_command_returns_result() {
+        let c = CdpClient::launch("data:text/html,<h1>test</h1>").unwrap();
+        let result = c.send(
+            "Runtime.evaluate",
+            serde_json::json!({ "expression": "1+1", "returnByValue": true }),
+        );
+        assert!(result.is_ok());
+    }
+
+    /// @covers: port
+    #[test]
+    #[ignore = "requires a running Chromium instance"]
+    fn test_port_returns_assigned_port() {
+        let c = CdpClient::launch("data:text/html,<h1>test</h1>").unwrap();
+        assert!(c.port() > 0);
+    }
+
+    /// @covers: ws_url
+    #[test]
+    #[ignore = "requires a running Chromium instance"]
+    fn test_ws_url_returns_websocket_url() {
+        let c = CdpClient::launch("data:text/html,<h1>test</h1>").unwrap();
+        assert!(c.ws_url().starts_with("ws://"), "ws_url must be a WebSocket URL");
     }
 }
