@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "chromiumctl",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/sweengineeringlabs/chromiumctl"
+authors = ["Senior Agentic Engine Engineer <engineers@swelabs.io>"]
+rust-version = "1.75"
+
+[workspace.lints.rust]
+warnings = "deny"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+
+[workspace.dependencies]
+serde         = { version = "1.0", features = ["derive"] }
+serde_json    = "1.0"
+tungstenite   = { version = "0.24", default-features = false, features = ["handshake"] }

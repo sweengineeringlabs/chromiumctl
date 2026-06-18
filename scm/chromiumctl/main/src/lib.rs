@@ -28,4 +28,8 @@ mod client;
 mod core;
 mod saf;
 
-pub use api::{CdpClient, CdpClientBuilder, PageEvaluator, Rect, Validator};
+pub use api::{
+    BrowserLocator, BrowserSession, CdpClient, CdpClientBuilder, PageEvaluator,
+    PlatformBrowserLocator, Rect, Validator,
+};
+pub use saf::*;

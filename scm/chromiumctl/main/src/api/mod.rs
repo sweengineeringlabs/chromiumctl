@@ -3,5 +3,7 @@ pub mod spi;
 pub mod traits;
 pub mod types;
 
+pub use browser::{BrowserLocator, PlatformBrowserLocator};
+pub use spi::BrowserSession;
 pub use traits::{PageEvaluator, Validator};
 pub use types::{CdpClient, CdpClientBuilder, Rect};

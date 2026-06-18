@@ -1,0 +1,39 @@
+[package]
+name = "chromiumctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Minimal Chromium DevTools Protocol client — launch, attach, evaluate JS, control viewport"
+keywords = ["cdp", "chromium", "chrome", "headless", "devtools"]
+categories = ["development-tools::testing", "web-programming"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+service_type = "client"
+
+[lib]
+name = "chromiumctl"
+path = "main/src/lib.rs"
+
+[[example]]
+name = "launch"
+path = "examples/launch.rs"
+
+[dependencies]
+serde.workspace      = true
+serde_json.workspace = true
+tungstenite.workspace = true
+
+[dev-dependencies]
+serde_json.workspace  = true
+tungstenite.workspace = true
+
+[lints.rust]
+warnings = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
