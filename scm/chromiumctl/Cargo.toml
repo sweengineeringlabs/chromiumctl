@@ -26,15 +26,15 @@ android = []
 
 [[bin]]
 name = "chromiumctl-cli"
-path = "bin/chromiumctl-cli/src/main.rs"
+path = "bin/chromiumctl-cli/main/src/main.rs"
 
 [[example]]
 name = "launch"
-path = "examples/src/launch.rs"
+path = "examples/launch/main/src/main.rs"
 
 [[bin]]
 name = "fake-adb-for-tests"
-path = "test-support/src/fake_adb.rs"
+path = "examples/fake-adb-for-tests/main/src/main.rs"
 required-features = ["android"]
 
 [[test]]

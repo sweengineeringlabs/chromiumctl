@@ -65,7 +65,7 @@ fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
 
 ## Project structure walkthrough
 
-`src/` is always the leaf folder holding actual source — every target (lib, bins, examples, tests) follows that convention, and each non-lib target beyond the library needs an explicit `[[bin]]`/`[[example]]`/`[[test]]` entry in `Cargo.toml` since none of these paths match Cargo's auto-discovery conventions.
+`src/` is always the leaf folder holding actual source, nested under a named unit (`main/`, `tests/`, or `examples/<name>/`) — every non-lib target has an explicit `[[bin]]`/`[[example]]`/`[[test]]` entry in `Cargo.toml` pointing at it, since none of these paths match Cargo's auto-discovery conventions.
 
 ```
 scm/
@@ -75,13 +75,17 @@ scm/
 │   └── deny.toml               cargo-deny config (cargo deny check --config config/deny.toml)
 └── chromiumctl/
     ├── Cargo.toml              Package manifest — every non-lib target below has an explicit path entry
-    ├── bin/chromiumctl-cli/src/
+    ├── bin/chromiumctl-cli/main/src/
     │   ├── main.rs             chromiumctl-cli binary (thin wrapper over the library)
     │   └── commands/           One module per subcommand (launch, eval, screenshot, ...)
-    ├── examples/src/
-    │   └── launch.rs           Minimal usage example
-    ├── test-support/src/
-    │   └── fake_adb.rs         adb stand-in for adb_locator_e2e_test.rs (feature `android`)
+    ├── examples/
+    │   ├── launch/main/src/
+    │   │   └── main.rs         Minimal usage example ([[example]] name = "launch")
+    │   └── fake-adb-for-tests/main/src/
+    │       └── main.rs         adb stand-in for adb_locator_e2e_test.rs — a [[bin]] target
+    │                           (env!("CARGO_BIN_EXE_...") only works for [[bin]], not
+    │                           [[example]]), physically grouped under examples/ anyway
+    │                           since its role is the same shape as an example
     ├── main/src/
     │   ├── lib.rs              Public surface — re-exports from api/ and saf/
     │   ├── client.rs           CdpClient impl: launch, attach, attach_android, navigate,
