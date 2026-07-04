@@ -16,8 +16,13 @@ fn test_cdp_client_builder_launch_connects_to_url() {
 }
 
 #[test]
-fn test_cdp_client_builder_new_returns_builder_instance() {
-    let _b = CdpClientBuilder::new("data:text/html,<p>test</p>").port(9399);
+#[ignore]
+fn test_cdp_client_builder_port_is_honored_on_launch() {
+    let c = CdpClientBuilder::new("data:text/html,<p>test</p>")
+        .port(9399)
+        .launch()
+        .expect("builder launch must succeed");
+    assert_eq!(c.port(), 9399, "builder's fixed port must be used, not an auto-assigned one");
 }
 
 #[test]

@@ -1,51 +1,70 @@
-pub fn execute(args: &[String]) -> Result<(), String> {
-    let mut url = None;
-    let mut port = 9222;
-    let mut headless = false;
-    let mut width = 1920;
-    let mut height = 1080;
+use chromiumctl::CdpClientBuilder;
+
+use super::{expect_value, parse_value, CliError};
+
+pub fn execute(args: &[String]) -> Result<(), CliError> {
+    let mut url: Option<String> = None;
+    let mut port: u16 = 9222;
+    let mut width: u32 = 1920;
+    let mut height: u32 = 1080;
 
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
             "--url" => {
                 i += 1;
-                if i < args.len() {
-                    url = Some(args[i].clone());
-                }
+                url = Some(expect_value(args, i, "--url")?);
             }
             "--port" => {
                 i += 1;
-                if i < args.len() {
-                    port = args[i].parse().map_err(|_| "Invalid port")?;
-                }
+                port = parse_value(args, i, "--port")?;
             }
-            "--headless" => headless = true,
+            "--headless" => {}
             "--width" => {
                 i += 1;
-                if i < args.len() {
-                    width = args[i].parse().map_err(|_| "Invalid width")?;
-                }
+                width = parse_value(args, i, "--width")?;
             }
             "--height" => {
                 i += 1;
-                if i < args.len() {
-                    height = args[i].parse().map_err(|_| "Invalid height")?;
-                }
+                height = parse_value(args, i, "--height")?;
             }
-            _ => {}
+            other => return Err(CliError::InvalidArgs(format!("unknown option: {}", other))),
         }
         i += 1;
     }
 
-    let url = url.ok_or("--url is required")?;
+    let url = url.ok_or_else(|| CliError::InvalidArgs("--url is required".to_string()))?;
 
-    println!("Launching browser...");
+    let client = CdpClientBuilder::new(&url)
+        .port(port)
+        .launch()
+        .map_err(CliError::ConnectionFailed)?;
+
+    client
+        .send(
+            "Emulation.setDeviceMetricsOverride",
+            serde_json::json!({
+                "width": width,
+                "height": height,
+                "deviceScaleFactor": 1,
+                "mobile": false,
+            }),
+        )
+        .map_err(CliError::ExecutionFailed)?;
+
+    println!("Browser launched.");
     println!("  URL: {}", url);
-    println!("  Port: {}", port);
-    println!("  Headless: {}", headless);
+    println!("  Port: {}", client.port());
     println!("  Viewport: {}x{}", width, height);
-    println!("\nBrowser launched. DevTools ready at ws://localhost:{}/devtools/browser", port);
+    println!("  DevTools: {}", client.ws_url());
+    println!(
+        "\nUse --port {} with other commands to control this session.",
+        client.port()
+    );
+
+    // Detach: skip Drop so the spawned Chromium process outlives this CLI
+    // invocation instead of being killed when `client` goes out of scope.
+    std::mem::forget(client);
 
     Ok(())
 }

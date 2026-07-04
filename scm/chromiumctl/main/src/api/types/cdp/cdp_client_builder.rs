@@ -30,6 +30,6 @@ impl CdpClientBuilder {
         if let Some(bin) = self.chrome_bin {
             std::env::set_var("CHROME_PATH", bin);
         }
-        super::CdpClient::launch(&self.url)
+        super::CdpClient::launch_on_port(&self.url, self.port)
     }
 }

@@ -20,8 +20,18 @@ impl CdpClient {
     /// Discovers the browser binary via the `CHROME_PATH` environment variable
     /// or well-known platform paths.
     pub fn launch(url: &str) -> Result<Self, String> {
+        Self::launch_on_port(url, None)
+    }
+
+    /// Launch a new headless Chromium instance on a specific `port` (or an
+    /// auto-assigned one if `port` is `None`), navigate to `url`, and connect.
+    ///
+    /// Used by [`CdpClientBuilder::port`] to honor a caller-fixed debugging port.
+    ///
+    /// [`CdpClientBuilder::port`]: crate::CdpClientBuilder::port
+    pub(crate) fn launch_on_port(url: &str, port: Option<u16>) -> Result<Self, String> {
         let chrome = PlatformBrowserLocator::find()?;
-        let port   = NEXT_PORT.fetch_add(1, Ordering::Relaxed);
+        let port   = port.unwrap_or_else(|| NEXT_PORT.fetch_add(1, Ordering::Relaxed));
 
         let chrome_process = Command::new(&chrome)
             .args([

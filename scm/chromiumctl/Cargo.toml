@@ -30,6 +30,7 @@ path = "examples/launch.rs"
 serde.workspace      = true
 serde_json.workspace = true
 tungstenite.workspace = true
+data-encoding.workspace = true
 
 [dev-dependencies]
 serde_json.workspace  = true

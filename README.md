@@ -75,6 +75,52 @@ let client = CdpClientBuilder::new("https://example.com")
 | `PageEvaluator::set_viewport_width(px)` | Resize viewport |
 | `PageEvaluator::get_viewport_size()` | `(width, height)` in pixels |
 
+## CLI
+
+`chromiumctl-cli` exposes the library over the command line for shell scripts, CI, and non-Rust callers. Build it with:
+
+```sh
+cargo build --release --bin chromiumctl-cli
+```
+
+### `launch` — start a browser and detach
+
+Spawns headless Chromium, connects, then detaches: the browser keeps running after the CLI process exits, so later commands can `--port` into it.
+
+```sh
+chromiumctl-cli launch --url https://example.com --port 9222 --width 1920 --height 1080
+```
+
+### Commands that attach to a running session with `--port`
+
+```sh
+chromiumctl-cli eval       --port 9222 --script "document.title" --output json
+chromiumctl-cli navigate   --port 9222 --url https://example.com/about
+chromiumctl-cli wait       --port 9222 --selector ".loaded" --timeout 10
+chromiumctl-cli click      --port 9222 --selector "button.submit"
+chromiumctl-cli input      --port 9222 --selector "input#search" --text "hello"
+chromiumctl-cli screenshot --port 9222 --output page.png --full-page
+chromiumctl-cli get-dom    --port 9222 --output dom.json
+chromiumctl-cli metrics    --port 9222 --output metrics.json
+```
+
+`eval --output` selects the stdout format (`text`, `json`, `yaml` — default `text`). For `screenshot`/`get-dom`/`metrics`, `--output <FILE>` is a destination path; omit it on `get-dom`/`metrics` to print JSON to stdout instead.
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | success |
+| 1 | command executed but failed (JS exception, element not found) |
+| 2 | invalid or missing arguments |
+| 3 | operation timed out (`wait`) |
+| 4 | could not connect to (or launch) the browser |
+
+### Known limitations
+
+- Chromium is always launched headless (`--headless=new`) — the `--headless` flag is accepted for RFC-0001 compatibility but has no effect; there is currently no way to launch headed via this library.
+- `eval --output yaml` emits a single `result: <value>` line, not general YAML serialization — it's only ever used to render one string field.
+
 ## Further reading
 
 - [Architecture](docs/3-design/architecture.md) — layer diagram, CDP message flow, threading model

@@ -1,32 +1,74 @@
+use chromiumctl::{CdpClient, PageEvaluator};
+use std::time::{Duration, Instant};
 
+use super::{expect_value, parse_value, CliError};
 
+pub fn execute(args: &[String]) -> Result<(), CliError> {
+    let mut port: u16 = 9222;
+    let mut selector: Option<String> = None;
+    let mut text: Option<String> = None;
+    let mut timeout_secs: u64 = 30;
 
-
-
-    pub fn execute(args: &[String]) -> Result<(), String> {
-        let mut port = 9222;
-        let mut _selector = None;
-
-        let mut i = 0;
-        while i < args.len() {
-            match args[i].as_str() {
-                "--port" => {
-                    i += 1;
-                    if i < args.len() {
-                        port = args[i].parse().map_err(|_| "Invalid port")?;
-                    }
-                }
-                "--selector" => {
-                    i += 1;
-                    if i < args.len() {
-                        _selector = Some(args[i].clone());
-                    }
-                }
-                _ => {}
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--port" => {
+                i += 1;
+                port = parse_value(args, i, "--port")?;
             }
-            i += 1;
+            "--selector" => {
+                i += 1;
+                selector = Some(expect_value(args, i, "--selector")?);
+            }
+            "--text" => {
+                i += 1;
+                text = Some(expect_value(args, i, "--text")?);
+            }
+            "--timeout" => {
+                i += 1;
+                timeout_secs = parse_value(args, i, "--timeout")?;
+            }
+            other => return Err(CliError::InvalidArgs(format!("unknown option: {}", other))),
         }
-
-        println!("Waiting on port {}...", port);
-        Ok(())
+        i += 1;
     }
+
+    let condition_js = match (&selector, &text) {
+        (Some(sel), _) => format!(
+            "document.querySelector({}) !== null",
+            json_string(sel)?
+        ),
+        (None, Some(txt)) => format!(
+            "document.body !== null && document.body.innerText.includes({})",
+            json_string(txt)?
+        ),
+        (None, None) => {
+            return Err(CliError::InvalidArgs(
+                "--selector or --text is required".to_string(),
+            ))
+        }
+    };
+
+    let client = CdpClient::attach(port).map_err(CliError::ConnectionFailed)?;
+
+    let deadline = Instant::now() + Duration::from_secs(timeout_secs);
+    loop {
+        let found = client.evaluate(&condition_js).map_err(CliError::ExecutionFailed)?;
+        if found == "true" {
+            println!("Condition met.");
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(CliError::Timeout(format!(
+                "condition not met within {}s",
+                timeout_secs
+            )));
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
+/// JSON-encode a string so it can be safely embedded as a JS string literal.
+fn json_string(s: &str) -> Result<String, CliError> {
+    serde_json::to_string(s).map_err(|e| CliError::InvalidArgs(e.to_string()))
+}

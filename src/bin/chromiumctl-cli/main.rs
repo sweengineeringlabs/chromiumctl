@@ -37,7 +37,7 @@ fn main() {
 
     if let Err(e) = result {
         eprintln!("Error: {}", e);
-        process::exit(1);
+        process::exit(e.exit_code());
     }
 }
 
@@ -57,15 +57,20 @@ fn print_help() {
     eprintln!("    metrics      Get performance metrics");
     eprintln!("    help         Print this message\n");
     eprintln!("OPTIONS:\n");
-    eprintln!("    --url <URL>           Target URL");
+    eprintln!("    --url <URL>           Target URL (launch, navigate)");
     eprintln!("    --port <PORT>         Debug port (default: 9222)");
-    eprintln!("    --output <FILE>       Output file path");
-    eprintln!("    --format <FORMAT>     Output format: json, yaml, text (default: text)");
-    eprintln!("    --timeout <SECS>      Operation timeout (default: 30)");
-    eprintln!("    --headless            Run in headless mode");
-    eprintln!("    -v, --verbose         Verbose logging\n");
+    eprintln!("    --script <JS>         JavaScript to evaluate (eval)");
+    eprintln!("    --selector <SEL>      CSS selector (wait, click, input)");
+    eprintln!("    --text <TEXT>         Text to match (wait) or type (input)");
+    eprintln!("    --width <PX>          Viewport width (launch; default: 1920)");
+    eprintln!("    --height <PX>         Viewport height (launch; default: 1080)");
+    eprintln!("    --output <PATH>       Output format text|json|yaml (eval) or file path (screenshot, get-dom, metrics)");
+    eprintln!("    --format <FMT>        Image format: png, jpeg, webp (screenshot; default: png)");
+    eprintln!("    --full-page           Capture beyond the viewport (screenshot)");
+    eprintln!("    --timeout <SECS>      Operation timeout in seconds (wait; default: 30)");
+    eprintln!("    --headless            Accepted for compatibility; Chromium always runs headless\n");
     eprintln!("EXAMPLES:\n");
-    eprintln!("    chromiumctl launch --url https://example.com --headless\n");
+    eprintln!("    chromiumctl launch --url https://example.com --port 9222\n");
     eprintln!("    chromiumctl eval --port 9222 --script \"document.title\"\n");
     eprintln!("    chromiumctl screenshot --port 9222 --output page.png\n");
 }

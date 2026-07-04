@@ -1,22 +1,44 @@
+use chromiumctl::CdpClient;
 
+use super::{expect_value, parse_value, CliError};
 
+pub fn execute(args: &[String]) -> Result<(), CliError> {
+    let mut port: u16 = 9222;
+    let mut output: Option<String> = None;
 
-
-
-    pub fn execute(args: &[String]) -> Result<(), String> {
-        let mut port = 9222;
-
-        let mut i = 0;
-        while i < args.len() {
-            if args[i] == "--port" {
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--port" => {
                 i += 1;
-                if i < args.len() {
-                    port = args[i].parse().map_err(|_| "Invalid port")?;
-                }
+                port = parse_value(args, i, "--port")?;
             }
-            i += 1;
+            "--output" => {
+                i += 1;
+                output = Some(expect_value(args, i, "--output")?);
+            }
+            other => return Err(CliError::InvalidArgs(format!("unknown option: {}", other))),
         }
-
-        println!("Exporting DOM from port {}...", port);
-        Ok(())
+        i += 1;
     }
+
+    let client = CdpClient::attach(port).map_err(CliError::ConnectionFailed)?;
+
+    let dom = client
+        .send("DOM.getDocument", serde_json::json!({ "depth": -1, "pierce": true }))
+        .map_err(CliError::ExecutionFailed)?;
+
+    let json = serde_json::to_string_pretty(&dom)
+        .map_err(|e| CliError::ExecutionFailed(format!("failed to serialize DOM: {}", e)))?;
+
+    match output {
+        Some(path) => {
+            std::fs::write(&path, &json)
+                .map_err(|e| CliError::ExecutionFailed(format!("failed to write '{}': {}", path, e)))?;
+            println!("DOM exported to {}", path);
+        }
+        None => println!("{}", json),
+    }
+
+    Ok(())
+}
