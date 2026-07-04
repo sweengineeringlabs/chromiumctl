@@ -26,7 +26,7 @@ android = []
 
 [[bin]]
 name = "chromiumctl-cli"
-path = "../../src/bin/chromiumctl-cli/main.rs"
+path = "bin/chromiumctl-cli/main.rs"
 
 [[example]]
 name = "launch"

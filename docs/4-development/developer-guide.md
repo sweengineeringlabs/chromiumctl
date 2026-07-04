@@ -10,7 +10,10 @@
 
 ## Build
 
+The workspace manifest lives at `scm/Cargo.toml` — run Cargo from `scm/`:
+
 ```sh
+cd scm
 cargo build
 ```
 
@@ -63,17 +66,20 @@ fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
 ## Project structure walkthrough
 
 ```
-Cargo.toml                      Workspace root
-Cargo.lock
 scm/
+├── Cargo.toml                  Workspace root
+├── Cargo.lock
 └── chromiumctl/
     ├── Cargo.toml              Package manifest (lib path = main/src/lib.rs)
+    ├── bin/chromiumctl-cli/    chromiumctl-cli binary (thin wrapper over the library)
     ├── examples/
     │   └── launch.rs           Minimal usage example
+    ├── test-support/
+    │   └── fake_adb.rs         adb stand-in for adb_locator_e2e_test.rs (feature `android`)
     ├── main/src/
     │   ├── lib.rs              Public surface — re-exports from api/ and saf/
-    │   ├── client.rs           CdpClient impl: launch, attach, navigate, send,
-    │   │                       WebSocket helpers, PageEvaluator impl
+    │   ├── client.rs           CdpClient impl: launch, attach, attach_android, navigate,
+    │   │                       send, WebSocket helpers, PageEvaluator impl
     │   ├── api/
     │   │   ├── types/cdp/
     │   │   │   ├── cdp_client.rs          Struct definition (fields pub(crate))
@@ -85,6 +91,8 @@ scm/
     │   │   └── spi/browser_session.rs     BrowserSession SPI trait
     │   ├── core/browser/
     │   │   └── platform_browser_locator.rs  find(), get_ws_url(), wait_for_debugger()
+    │   ├── core/android/       (feature `android`)
+    │   │   └── adb_locator.rs  AdbLocator: find adb, enumerate/match WebView sockets, forward
     │   └── saf/mod.rs          Public constants: DEFAULT_DEBUG_PORT, viewport presets
     └── tests/
         ├── client_e2e_test.rs               CdpClient lifecycle
@@ -95,7 +103,9 @@ scm/
         ├── browser_locator_e2e_test.rs       Browser discovery
         ├── cdp_client_e2e_test.rs            CdpClient API surface
         ├── browser_session_e2e_test.rs       BrowserSession contract
-        └── platform_browser_locator_e2e_test.rs  Platform discovery smoke tests
+        ├── platform_browser_locator_e2e_test.rs  Platform discovery smoke tests
+        ├── cli_e2e_test.rs                   chromiumctl-cli commands
+        └── adb_locator_e2e_test.rs           attach_android (feature `android`)
 ```
 
 ## Commit style

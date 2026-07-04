@@ -4,6 +4,7 @@ set -euo pipefail
 echo "chromiumctl bootstrap"
 echo "Requires: Rust 1.75+, a Chromium-based browser for integration tests"
 
+cd "$(dirname "$0")/scm"
 cargo build
 cargo test --lib
-echo "Bootstrap complete. Run 'cargo test -- --ignored --test-threads=1' for live-browser tests."
+echo "Bootstrap complete. Run 'cd scm && cargo test -- --ignored --test-threads=1' for live-browser tests."

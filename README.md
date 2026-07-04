@@ -94,9 +94,10 @@ Enumerates active `webview_devtools_remote_*` debug sockets over `adb shell`, ma
 
 ## CLI
 
-`chromiumctl-cli` exposes the library over the command line for shell scripts, CI, and non-Rust callers. Build it with:
+`chromiumctl-cli` exposes the library over the command line for shell scripts, CI, and non-Rust callers. Build it with (from `scm/`, where the workspace manifest lives):
 
 ```sh
+cd scm
 cargo build --release --bin chromiumctl-cli
 ```
 
