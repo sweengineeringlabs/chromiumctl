@@ -62,6 +62,7 @@ fn print_help() {
     eprintln!("    --script <JS>         JavaScript to evaluate (eval)");
     eprintln!("    --selector <SEL>      CSS selector (wait, click, input)");
     eprintln!("    --text <TEXT>         Text to match (wait) or type (input)");
+    eprintln!("    --navigation          Wait for document.readyState to complete (wait)");
     eprintln!("    --width <PX>          Viewport width (launch; default: 1920)");
     eprintln!("    --height <PX>         Viewport height (launch; default: 1080)");
     eprintln!("    --output <PATH>       Output format text|json|yaml (eval) or file path (screenshot, get-dom, metrics)");
