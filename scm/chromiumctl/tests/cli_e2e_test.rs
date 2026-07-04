@@ -175,6 +175,36 @@ fn test_wait_times_out_when_selector_absent() {
     drop(client);
 }
 
+/// @covers: wait
+#[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_wait_succeeds_for_navigation_condition() {
+    let port = next_port();
+    let client = CdpClientBuilder::new("data:text/html,<p>loaded</p>")
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    let output = cli()
+        .args(["wait", "--port", &port.to_string(), "--navigation", "--timeout", "5"])
+        .output()
+        .expect("failed to run chromiumctl-cli wait");
+
+    assert!(
+        output.status.success(),
+        "wait --navigation must exit 0, stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    drop(client);
+}
+
+/// @covers: wait
+#[test]
+fn test_wait_returns_exit_2_when_no_condition_given() {
+    let output = cli().args(["wait", "--port", "9222"]).output().unwrap();
+    assert_eq!(output.status.code(), Some(2), "missing --selector/--text/--navigation must exit 2");
+}
+
 // ---------------------------------------------------------------------------
 // click / input
 // ---------------------------------------------------------------------------

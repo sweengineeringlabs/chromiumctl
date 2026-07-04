@@ -7,6 +7,7 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
     let mut port: u16 = 9222;
     let mut selector: Option<String> = None;
     let mut text: Option<String> = None;
+    let mut navigation = false;
     let mut timeout_secs: u64 = 30;
 
     let mut i = 0;
@@ -24,6 +25,7 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
                 i += 1;
                 text = Some(expect_value(args, i, "--text")?);
             }
+            "--navigation" => navigation = true,
             "--timeout" => {
                 i += 1;
                 timeout_secs = parse_value(args, i, "--timeout")?;
@@ -33,20 +35,19 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
         i += 1;
     }
 
-    let condition_js = match (&selector, &text) {
-        (Some(sel), _) => format!(
-            "document.querySelector({}) !== null",
-            json_string(sel)?
-        ),
-        (None, Some(txt)) => format!(
+    let condition_js = if let Some(sel) = &selector {
+        format!("document.querySelector({}) !== null", json_string(sel)?)
+    } else if let Some(txt) = &text {
+        format!(
             "document.body !== null && document.body.innerText.includes({})",
             json_string(txt)?
-        ),
-        (None, None) => {
-            return Err(CliError::InvalidArgs(
-                "--selector or --text is required".to_string(),
-            ))
-        }
+        )
+    } else if navigation {
+        "document.readyState === 'complete'".to_string()
+    } else {
+        return Err(CliError::InvalidArgs(
+            "--selector, --text, or --navigation is required".to_string(),
+        ));
     };
 
     let client = CdpClient::attach(port).map_err(CliError::ConnectionFailed)?;

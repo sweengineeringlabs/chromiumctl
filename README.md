@@ -97,6 +97,7 @@ chromiumctl-cli launch --url https://example.com --port 9222 --width 1920 --heig
 chromiumctl-cli eval       --port 9222 --script "document.title" --output json
 chromiumctl-cli navigate   --port 9222 --url https://example.com/about
 chromiumctl-cli wait       --port 9222 --selector ".loaded" --timeout 10
+chromiumctl-cli wait       --port 9222 --navigation --timeout 10  # or --text "some content"
 chromiumctl-cli click      --port 9222 --selector "button.submit"
 chromiumctl-cli input      --port 9222 --selector "input#search" --text "hello"
 chromiumctl-cli screenshot --port 9222 --output page.png --full-page
