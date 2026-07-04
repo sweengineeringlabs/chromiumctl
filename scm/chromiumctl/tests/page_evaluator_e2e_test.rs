@@ -1,7 +1,8 @@
-/// E2e tests for PageEvaluator trait methods exercised via CdpClient.
-///
-/// All tests require a Chromium-based browser. Run with:
-///   cargo test -- --ignored --test-threads=1
+// E2e tests for PageEvaluator trait methods exercised via CdpClient.
+//
+// All tests require a Chromium-based browser. Run with:
+//   cargo test -- --ignored --test-threads=1
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use chromiumctl::{CdpClient, PageEvaluator};
 

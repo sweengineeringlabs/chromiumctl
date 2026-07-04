@@ -33,7 +33,7 @@ impl CdpClient {
         let chrome = PlatformBrowserLocator::find()?;
         let port   = port.unwrap_or_else(|| NEXT_PORT.fetch_add(1, Ordering::Relaxed));
 
-        let chrome_process = Command::new(&chrome)
+        let mut chrome_process = Command::new(&chrome)
             .args([
                 "--headless=new",
                 &format!("--remote-debugging-port={}", port),
@@ -51,8 +51,24 @@ impl CdpClient {
             .spawn()
             .map_err(|e| format!("failed to launch Chromium at '{}': {}", chrome, e))?;
 
-        let ws_url = PlatformBrowserLocator::wait_for_debugger(port)?;
-        let socket = connect_ws(&ws_url)?;
+        // `Child` is not killed on drop, so a spawned-but-unreachable browser
+        // must be reaped explicitly before propagating either error below.
+        let ws_url = match PlatformBrowserLocator::wait_for_debugger(port) {
+            Ok(url) => url,
+            Err(e) => {
+                let _ = chrome_process.kill();
+                let _ = chrome_process.wait();
+                return Err(e);
+            }
+        };
+        let socket = match connect_ws(&ws_url) {
+            Ok(socket) => socket,
+            Err(e) => {
+                let _ = chrome_process.kill();
+                let _ = chrome_process.wait();
+                return Err(e);
+            }
+        };
 
         let client = Self {
             socket:         Mutex::new(socket),
@@ -126,6 +142,15 @@ impl CdpClient {
 
 impl Drop for CdpClient {
     fn drop(&mut self) {
+        if self.chrome_process.is_some() {
+            // On Windows, the process spawned by `Command::spawn` is a launcher
+            // stub that re-execs and exits almost immediately — the real browser
+            // (and its renderer subprocesses) end up as an unrelated PID that
+            // `Child::kill()` below cannot see or terminate. Ask the browser to
+            // close itself over CDP first; this reliably tears down the whole
+            // process tree regardless of that launcher indirection.
+            let _ = self.send_cdp("Browser.close", serde_json::json!({}));
+        }
         if let Ok(mut socket) = self.socket.lock() {
             let _ = socket.close(None);
         }
@@ -237,6 +262,7 @@ fn send_cdp_raw(
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use crate::api::CdpClient;
@@ -283,9 +309,8 @@ mod tests {
     /// @covers: navigate
     #[test]
     fn test_navigate_updates_page_when_browser_available() {
-        match CdpClient::launch("data:text/html,<p>start</p>") {
-            Ok(mut c) => c.navigate("data:text/html,<p>end</p>").unwrap(),
-            Err(_) => {}
+        if let Ok(mut c) = CdpClient::launch("data:text/html,<p>start</p>") {
+            c.navigate("data:text/html,<p>end</p>").unwrap();
         }
     }
 
@@ -304,15 +329,12 @@ mod tests {
     /// @covers: send
     #[test]
     fn test_send_dispatches_cdp_command_when_browser_available() {
-        match CdpClient::launch("data:text/html,<p>test</p>") {
-            Ok(c) => {
-                let result = c.send(
-                    "Runtime.evaluate",
-                    serde_json::json!({ "expression": "1", "returnByValue": true }),
-                );
-                assert!(result.is_ok(), "send must succeed when browser is running");
-            }
-            Err(_) => {}
+        if let Ok(c) = CdpClient::launch("data:text/html,<p>test</p>") {
+            let result = c.send(
+                "Runtime.evaluate",
+                serde_json::json!({ "expression": "1", "returnByValue": true }),
+            );
+            assert!(result.is_ok(), "send must succeed when browser is running");
         }
     }
 

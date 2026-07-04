@@ -1,7 +1,7 @@
-/// E2e tests for the BrowserLocator trait (exercised via CdpClient).
-///
-/// Requires a Chromium-based browser. Run with:
-///   cargo test -- --ignored --test-threads=1
+// E2e tests for the BrowserLocator trait (exercised via CdpClient).
+//
+// Requires a Chromium-based browser. Run with:
+//   cargo test -- --ignored --test-threads=1
 
 use chromiumctl::CdpClient;
 

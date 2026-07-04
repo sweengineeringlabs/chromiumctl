@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use chromiumctl::{CdpClient, PageEvaluator};
 
 fn main() {

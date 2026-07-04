@@ -1,9 +1,10 @@
-/// E2e tests for the `chromiumctl-cli` binary.
-///
-/// Tests that don't need a running browser (arg validation, connection
-/// failures) run by default. Tests that drive a real Chromium instance
-/// require a Chromium-based browser. Run with:
-///   cargo test --test cli_e2e_test -- --ignored --test-threads=1
+// E2e tests for the `chromiumctl-cli` binary.
+//
+// Tests that don't need a running browser (arg validation, connection
+// failures) run by default. Tests that drive a real Chromium instance
+// require a Chromium-based browser. Run with:
+//   cargo test --test cli_e2e_test -- --ignored --test-threads=1
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use chromiumctl::{CdpClient, CdpClientBuilder, PageEvaluator};
 use std::process::Command;

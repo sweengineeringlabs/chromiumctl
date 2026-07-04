@@ -1,6 +1,7 @@
-/// Tests verifying BrowserSession interface contracts.
-///
-/// BrowserSession is the SPI trait — tested via CdpClient (the default implementor).
+// Tests verifying BrowserSession interface contracts.
+//
+// BrowserSession is the SPI trait — tested via CdpClient (the default implementor).
+#![allow(clippy::unwrap_used)]
 
 use chromiumctl::{CdpClient, PageEvaluator};
 

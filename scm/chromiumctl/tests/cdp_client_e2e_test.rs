@@ -1,7 +1,8 @@
-/// E2e tests for CdpClient — exercises launch, attach, navigate, send, port, ws_url.
-///
-/// All tests require a Chromium-based browser. Run with:
-///   cargo test -- --ignored --test-threads=1
+// E2e tests for CdpClient — exercises launch, attach, navigate, send, port, ws_url.
+//
+// All tests require a Chromium-based browser. Run with:
+//   cargo test -- --ignored --test-threads=1
+#![allow(clippy::unwrap_used)]
 
 use chromiumctl::{CdpClient, PageEvaluator};
 

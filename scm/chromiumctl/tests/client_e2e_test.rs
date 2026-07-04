@@ -1,10 +1,11 @@
-/// Live-browser e2e tests — exercise tungstenite WebSocket transport via CdpClient.
-///
-/// Requires a Chromium-based browser (Chrome, Edge, Brave) to be installed,
-/// or `CHROME_PATH` set to the binary.
-///
-/// Run with:
-///   cargo test -- --ignored --test-threads=1
+// Live-browser e2e tests — exercise tungstenite WebSocket transport via CdpClient.
+//
+// Requires a Chromium-based browser (Chrome, Edge, Brave) to be installed,
+// or `CHROME_PATH` set to the binary.
+//
+// Run with:
+//   cargo test -- --ignored --test-threads=1
+#![allow(clippy::unwrap_used)]
 
 use chromiumctl::{CdpClient, PageEvaluator};
 use tungstenite as _; // tungstenite WebSocket transport is exercised by every CdpClient call below

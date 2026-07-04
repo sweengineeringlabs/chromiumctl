@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use chromiumctl::Validator;
 
 struct AgeGuard(i32);

@@ -120,6 +120,7 @@ chromiumctl-cli metrics    --port 9222 --output metrics.json
 
 - Chromium is always launched headless (`--headless=new`) — the `--headless` flag is accepted for RFC-0001 compatibility but has no effect; there is currently no way to launch headed via this library.
 - `eval --output yaml` emits a single `result: <value>` line, not general YAML serialization — it's only ever used to render one string field.
+- On Windows, if a launched browser never becomes reachable (e.g. `wait_for_debugger` times out), the spawned process may be left running: Chrome's own launcher process re-execs and exits almost immediately, so the `Child` handle `CdpClient` holds doesn't correspond to the real, long-lived browser process, and `Child::kill()` on it is a no-op. Normal launch → use → drop is unaffected — `Drop` closes the browser over CDP itself (`Browser.close`) rather than relying on that handle — this only affects the rare case where the browser never came up in the first place.
 
 ## Further reading
 

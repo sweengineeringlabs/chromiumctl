@@ -1,4 +1,4 @@
-/// Tests for PlatformBrowserLocator browser discovery.
+// Tests for PlatformBrowserLocator browser discovery.
 
 use chromiumctl::CdpClient;
 
