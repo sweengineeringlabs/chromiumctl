@@ -65,16 +65,22 @@ fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
 
 ## Project structure walkthrough
 
+`src/` is always the leaf folder holding actual source — every target (lib, bins, examples, tests) follows that convention, and each non-lib target beyond the library needs an explicit `[[bin]]`/`[[example]]`/`[[test]]` entry in `Cargo.toml` since none of these paths match Cargo's auto-discovery conventions.
+
 ```
 scm/
 ├── Cargo.toml                  Workspace root
 ├── Cargo.lock
+├── config/
+│   └── deny.toml               cargo-deny config (cargo deny check --config config/deny.toml)
 └── chromiumctl/
-    ├── Cargo.toml              Package manifest (lib path = main/src/lib.rs)
-    ├── bin/chromiumctl-cli/    chromiumctl-cli binary (thin wrapper over the library)
-    ├── examples/
+    ├── Cargo.toml              Package manifest — every non-lib target below has an explicit path entry
+    ├── bin/chromiumctl-cli/src/
+    │   ├── main.rs             chromiumctl-cli binary (thin wrapper over the library)
+    │   └── commands/           One module per subcommand (launch, eval, screenshot, ...)
+    ├── examples/src/
     │   └── launch.rs           Minimal usage example
-    ├── test-support/
+    ├── test-support/src/
     │   └── fake_adb.rs         adb stand-in for adb_locator_e2e_test.rs (feature `android`)
     ├── main/src/
     │   ├── lib.rs              Public surface — re-exports from api/ and saf/
@@ -94,7 +100,7 @@ scm/
     │   ├── core/android/       (feature `android`)
     │   │   └── adb_locator.rs  AdbLocator: find adb, enumerate/match WebView sockets, forward
     │   └── saf/mod.rs          Public constants: DEFAULT_DEBUG_PORT, viewport presets
-    └── tests/
+    └── tests/src/
         ├── client_e2e_test.rs               CdpClient lifecycle
         ├── page_evaluator_e2e_test.rs        PageEvaluator methods
         ├── rect_e2e_test.rs                  Rect helpers (offline)
