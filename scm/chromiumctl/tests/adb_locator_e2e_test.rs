@@ -35,7 +35,13 @@ fn test_attach_android_fails_with_actionable_error_when_adb_path_invalid() {
 #[test]
 #[ignore = "requires a real Android device/emulator with adb installed and a debuggable WebView active"]
 fn test_attach_android_connects_to_real_webview() {
-    // Replace with a real debuggable package name on the connected device.
+    // Verified 2026-07-04 against a real Samsung SM-A055F over `adb connect`
+    // (wireless debugging), using the minimal test app in
+    // appsoluxions/hello-android/ (package com.chromiumctl.webviewdebugtest,
+    // a single WebView with an element id="marker"): attach_android
+    // succeeded end to end and `evaluate` read the marker's real content back.
+    // Replace the package name below with a real debuggable package on
+    // whatever device you're testing against.
     let client = CdpClient::attach_android("com.example.app")
         .expect("attach_android must succeed against a real debuggable WebView");
     assert!(client.port() > 0);
