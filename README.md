@@ -6,7 +6,7 @@ Minimal Chromium DevTools Protocol client for Rust. Synchronous, zero-async, no 
 
 ```toml
 [dependencies]
-chromiumctl = "0.1"
+chromiumctl = "0.2"
 ```
 
 Requires a Chromium-based browser installed on the machine. Set `CHROME_PATH` to override auto-discovery.
@@ -62,7 +62,7 @@ let client = CdpClientBuilder::new("https://example.com")
 
 ```toml
 [dependencies]
-chromiumctl = { version = "0.1", features = ["android"] }
+chromiumctl = { version = "0.2", features = ["android"] }
 ```
 
 ```rust
