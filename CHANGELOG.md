@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-07-09
+
 ### Fixed
 - `eval --output json` now preserves the JS expression's real type (boolean, number) instead of stringifying every result (#4)
 
