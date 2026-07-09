@@ -39,7 +39,11 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
     let result = client.evaluate(&script).map_err(CliError::ExecutionFailed)?;
 
     match output_format.as_str() {
-        "json" => println!("{}", serde_json::json!({ "result": result })),
+        "json" => {
+            let value: serde_json::Value = serde_json::from_str(&result)
+                .unwrap_or_else(|_| serde_json::Value::String(result.clone()));
+            println!("{}", serde_json::json!({ "result": value }));
+        }
         "yaml" => println!("result: {:?}", result),
         _ => println!("{}", result),
     }

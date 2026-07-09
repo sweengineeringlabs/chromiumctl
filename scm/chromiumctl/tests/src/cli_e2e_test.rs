@@ -112,6 +112,56 @@ fn test_eval_returns_exit_2_when_port_and_package_both_given() {
 
 /// @covers: eval
 #[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_eval_output_json_preserves_boolean_type() {
+    let port = next_port();
+    let client = CdpClientBuilder::new("data:text/html,<p>test</p>")
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    let output = cli()
+        .args(["eval", "--port", &port.to_string(), "--script", "true", "--output", "json"])
+        .output()
+        .expect("failed to run chromiumctl-cli eval");
+
+    assert!(output.status.success(), "eval must exit 0, stderr: {}", String::from_utf8_lossy(&output.stderr));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(stdout.trim()).expect("stdout must be valid JSON");
+    assert_eq!(parsed["result"], serde_json::json!(true), "boolean result must be a native JSON boolean, not a string");
+
+    drop(client);
+}
+
+/// @covers: eval
+#[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_eval_output_json_wraps_non_json_string_as_string() {
+    let port = next_port();
+    let client = CdpClientBuilder::new("data:text/html,<p>test</p>")
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    let output = cli()
+        .args(["eval", "--port", &port.to_string(), "--script", "'count:5'", "--output", "json"])
+        .output()
+        .expect("failed to run chromiumctl-cli eval");
+
+    assert!(output.status.success(), "eval must exit 0, stderr: {}", String::from_utf8_lossy(&output.stderr));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(stdout.trim()).expect("stdout must be valid JSON");
+    assert_eq!(
+        parsed["result"],
+        serde_json::json!("count:5"),
+        "a non-JSON-parseable string must still be wrapped as a JSON string"
+    );
+
+    drop(client);
+}
+
+/// @covers: eval
+#[test]
 #[cfg(not(feature = "android"))]
 fn test_eval_package_gives_actionable_error_without_android_feature() {
     let output = cli()
