@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-07-12
+
+### Fixed
+- `CdpClient::launch`'s auto-assigned port now comes from an OS-assigned ephemeral port instead of a fixed-starting counter, which could collide when separate processes launched concurrently (#9)
+
 ## [0.2.2] — 2026-07-12
 
 ### Fixed
