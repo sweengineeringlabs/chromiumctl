@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-07-12
+
 ### Fixed
 - `eval` now awaits a returned `Promise` and prints its resolved value instead of silently exiting with no output (`returnByValue` can't serialize an un-awaited `Promise`, so the result came back empty) (#8)
 
