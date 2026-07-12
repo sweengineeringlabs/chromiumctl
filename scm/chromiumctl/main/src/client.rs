@@ -1,7 +1,7 @@
-use std::net::TcpStream;
+use std::net::{TcpListener, TcpStream};
 use std::process::{Command, Stdio};
 use std::sync::{
-    atomic::{AtomicU16, AtomicU64, Ordering},
+    atomic::{AtomicU64, Ordering},
     Mutex,
 };
 use std::time::{Duration, Instant};
@@ -12,7 +12,26 @@ use crate::api::{CdpClient, PageEvaluator};
 use crate::api::browser::BrowserLocator;
 use crate::core::browser::PlatformBrowserLocator;
 
-static NEXT_PORT: AtomicU16 = AtomicU16::new(9300);
+/// Ask the OS for a currently-unused TCP port instead of guessing from a
+/// fixed/predictable starting value.
+///
+/// The previous approach (`static NEXT_PORT: AtomicU16` counting up from a
+/// fixed 9300) only prevented collisions between `CdpClient`s launched
+/// within the *same process* - concurrent process launches (multiple `csslense`
+/// invocations, parallel test binaries, ...) all started counting from the
+/// same 9300 and routinely raced for the same port. Binding an OS-assigned
+/// ephemeral port has no fixed starting point to collide on, for either
+/// sequential or concurrent launches.
+fn pick_free_port() -> Result<u16, String> {
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .map_err(|e| format!("failed to find a free port: {}", e))?;
+    let port = listener
+        .local_addr()
+        .map_err(|e| format!("failed to read assigned port: {}", e))?
+        .port();
+    // `listener` drops here, freeing the port for Chrome to bind.
+    Ok(port)
+}
 
 impl CdpClient {
     /// Launch a new headless Chromium instance, navigate to `url`, and connect.
@@ -31,7 +50,10 @@ impl CdpClient {
     /// [`CdpClientBuilder::port`]: crate::CdpClientBuilder::port
     pub(crate) fn launch_on_port(url: &str, port: Option<u16>) -> Result<Self, String> {
         let chrome = PlatformBrowserLocator::find()?;
-        let port   = port.unwrap_or_else(|| NEXT_PORT.fetch_add(1, Ordering::Relaxed));
+        let port = match port {
+            Some(p) => p,
+            None => pick_free_port()?,
+        };
 
         let mut chrome_process = Command::new(&chrome)
             .args([
@@ -318,12 +340,35 @@ mod tests {
     }
 
     #[test]
-    fn test_next_port_increments() {
-        let p1 = NEXT_PORT.load(Ordering::Relaxed);
-        let p2 = NEXT_PORT.fetch_add(1, Ordering::Relaxed);
-        assert_eq!(p1, p2);
-        assert_eq!(NEXT_PORT.load(Ordering::Relaxed), p2 + 1);
-        NEXT_PORT.fetch_sub(1, Ordering::Relaxed);
+    fn test_pick_free_port_returns_a_bindable_port() {
+        let port = pick_free_port().expect("should find a free port");
+        assert!(port > 0);
+        // The port must actually be free immediately after being picked.
+        let listener = TcpListener::bind(("127.0.0.1", port));
+        assert!(listener.is_ok(), "port {port} should be bindable right after being picked");
+    }
+
+    /// @covers: pick_free_port - the actual property that fixes issue #7
+    /// (concurrent csslense process launches colliding on a predictable
+    /// starting port). Simulates concurrent launches via threads, since
+    /// pick_free_port has no cross-process state to race on in the first
+    /// place - the OS's ephemeral port allocator is the thing under test.
+    #[test]
+    fn test_pick_free_port_concurrent_calls_do_not_collide() {
+        use std::thread;
+        let handles: Vec<_> = (0..8).map(|_| thread::spawn(pick_free_port)).collect();
+        let ports: Vec<u16> = handles
+            .into_iter()
+            .map(|h| h.join().expect("thread panicked").expect("should find a free port"))
+            .collect();
+        let mut unique = ports.clone();
+        unique.sort_unstable();
+        unique.dedup();
+        assert_eq!(
+            unique.len(),
+            ports.len(),
+            "concurrent pick_free_port calls returned duplicate ports: {ports:?}"
+        );
     }
 
     #[test]
