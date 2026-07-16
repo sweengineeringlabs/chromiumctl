@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-17
+
+### Added
+- `chromiumctl-cli reap [--dry-run] [--max-age <DUR>]` — closes and cleans up sessions whose `launch` caller has died or gone stale, recovering headless Chromium instances that would otherwise leak permanently (RFC-0003, #10)
+- `launch --reap-stale` — opportunistically reaps other dead-caller sessions before starting a new one
+- `launch` now writes a session record (port, launch time, caller PID, caller start-time fingerprint) before detaching; `stop` deletes it on successful close. Session directory defaults to `<tmp>/chromiumctl/sessions`, overridable via `CHROMIUMCTL_SESSION_DIR`
+
 ## [0.2.3] — 2026-07-12
 
 ### Fixed
