@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-07-17
+
+### Testing
+- Closed remaining acceptance-criteria gaps for #11/#12/#13: `get_pseudo_style` apostrophe-escaping regression, `input`/`wait --selector` escaping re-verified after shadow-piercing was wired in, multi-file `set-files` against `<input multiple>`, and `mock`'s "no added latency" / "unchanged when never invoked" behavior — no functional changes
+
 ## [0.4.0] — 2026-07-17
 
 ### Added
