@@ -161,3 +161,14 @@ fn test_get_bounding_rect_selector_with_embedded_apostrophe_does_not_break() {
         .expect("a selector containing a literal ' must not break the generated JS");
     assert!(r.width > 0.0 && r.height > 0.0);
 }
+
+/// @covers: get_pseudo_style
+#[test]
+#[ignore]
+fn test_get_pseudo_style_selector_with_embedded_apostrophe_does_not_break() {
+    let c = CdpClient::launch(apostrophe_selector_fixture_url()).unwrap();
+    let display = c
+        .get_pseudo_style("[data-x='a']", "::first-letter", "display")
+        .expect("a selector containing a literal ' must not break the generated JS");
+    assert!(!display.is_empty());
+}

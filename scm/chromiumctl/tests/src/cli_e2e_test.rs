@@ -288,6 +288,32 @@ fn test_wait_succeeds_when_selector_present() {
 /// @covers: wait
 #[test]
 #[ignore = "requires a running Chromium instance"]
+fn test_wait_selector_with_embedded_apostrophe_does_not_break() {
+    let port = next_port();
+    let client = CdpClientBuilder::new(r#"data:text/html,<button id=btn data-x="a">ok</button>"#)
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    // wait.rs already had correct escaping (its own local json_string())
+    // before shadow-piercing was wired in alongside it — this confirms
+    // that pre-existing correctness wasn't disturbed by that change.
+    let output = cli()
+        .args(["wait", "--port", &port.to_string(), "--selector", "[data-x='a']", "--timeout", "5"])
+        .output()
+        .expect("failed to run chromiumctl-cli wait");
+
+    assert!(
+        output.status.success(),
+        "a selector with a literal ' must not break wait --selector, stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    drop(client);
+}
+
+/// @covers: wait
+#[test]
+#[ignore = "requires a running Chromium instance"]
 fn test_wait_times_out_when_selector_absent() {
     let port = next_port();
     let client = CdpClientBuilder::new("data:text/html,<p>empty</p>")
@@ -457,6 +483,34 @@ fn test_input_types_real_text_into_field() {
     drop(client);
 }
 
+/// @covers: input
+#[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_input_selector_with_embedded_apostrophe_does_not_break() {
+    let port = next_port();
+    let client = CdpClientBuilder::new(r#"data:text/html,<input id=box type=text data-x="a">"#)
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    // input.rs already had correct escaping (serde_json::to_string) before
+    // shadow-piercing was wired in alongside it — confirms that
+    // pre-existing correctness wasn't disturbed by that change.
+    let output = cli()
+        .args(["input", "--port", &port.to_string(), "--selector", "[data-x='a']", "--text", "ok"])
+        .output()
+        .expect("failed to run chromiumctl-cli input");
+
+    assert!(
+        output.status.success(),
+        "a selector with a literal ' must not break input, stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(client.evaluate("document.getElementById('box').value").unwrap(), "ok");
+
+    drop(client);
+}
+
 // ---------------------------------------------------------------------------
 // set-files
 // ---------------------------------------------------------------------------
@@ -466,6 +520,18 @@ fn file_input_fixture_url() -> &'static str {
         document.getElementById('file-input').addEventListener('change', function(e) {
             var f = e.target.files[0];
             document.getElementById('result').textContent = f ? (f.name + ':' + f.size) : 'none';
+        });
+    </script>"#
+}
+
+fn multi_file_input_fixture_url() -> &'static str {
+    r#"data:text/html,<input type="file" id="file-input" multiple><div id="result">none</div><script>
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            var names = [];
+            for (var i = 0; i < e.target.files.length; i++) {
+                names.push(e.target.files[i].name + ':' + e.target.files[i].size);
+            }
+            document.getElementById('result').textContent = names.length + '|' + names.join(',');
         });
     </script>"#
 }
@@ -506,6 +572,51 @@ fn test_set_files_sets_a_real_file_and_fires_change() {
         format!("{}:{}", expected_name, "hello set-files".len()),
         "the input's change handler must see a real File with the real name and size — \
          proves DOM.setFileInputFiles fires 'change' natively, no manual dispatch needed"
+    );
+
+    drop(client);
+}
+
+/// @covers: set-files
+#[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_set_files_sets_multiple_real_files_on_a_multiple_input() {
+    let port = next_port();
+    let client = CdpClientBuilder::new(multi_file_input_fixture_url())
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    let path_a = unique_temp_file("set_files_multi_a.txt");
+    let path_b = unique_temp_file("set_files_multi_b.txt");
+    std::fs::write(&path_a, b"aaa").expect("setup: fixture file a must be writable");
+    std::fs::write(&path_b, b"bbbb").expect("setup: fixture file b must be writable");
+
+    let files_arg = format!(
+        "{},{}",
+        path_a.to_str().expect("setup: path a must be valid UTF-8"),
+        path_b.to_str().expect("setup: path b must be valid UTF-8"),
+    );
+    let output = cli()
+        .args(["set-files", "--port", &port.to_string(), "--selector", "#file-input", "--files", &files_arg])
+        .output()
+        .expect("failed to run chromiumctl-cli set-files");
+
+    assert!(
+        output.status.success(),
+        "set-files with multiple comma-separated paths must exit 0, stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let expected = format!(
+        "2|{}:3,{}:4",
+        path_a.file_name().unwrap().to_str().unwrap(),
+        path_b.file_name().unwrap().to_str().unwrap(),
+    );
+    let result = client.evaluate("document.getElementById('result').textContent").unwrap();
+    assert_eq!(
+        result, expected,
+        "an <input multiple> must receive all comma-separated files, not just the first"
     );
 
     drop(client);
@@ -1278,6 +1389,27 @@ fn test_mock_fulfills_a_matching_request_with_the_fake_response() {
     );
 }
 
+/// Trigger `window.runFetch(url)` against `client`'s page (having first
+/// reset `#result` to `pending`) and return `(elapsed, final_result)`.
+/// Shared by the "no added latency" comparison below, so the baseline and
+/// with-mock-active measurements are driven identically.
+fn run_fetch_and_time_it(client: &CdpClient, url: &str) -> (std::time::Duration, String) {
+    client.evaluate("document.getElementById('result').textContent = 'pending'").unwrap();
+    let started = std::time::Instant::now();
+    client.evaluate(&format!("window.runFetch('{}'); 'started'", url)).expect("triggering the fetch must not itself error");
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let mut result = "pending".to_string();
+    while std::time::Instant::now() < deadline {
+        result = client.evaluate("document.getElementById('result').textContent").unwrap();
+        if result != "pending" {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    (started.elapsed(), result)
+}
+
 /// @covers: mock
 #[test]
 #[ignore = "requires a running Chromium instance"]
@@ -1288,6 +1420,11 @@ fn test_mock_leaves_non_matching_requests_untouched() {
         .launch()
         .expect("setup: launch must succeed");
 
+    // Baseline: how long the same failing (nonexistent-host) fetch takes
+    // with no interception active at all.
+    let (baseline_elapsed, baseline_result) = run_fetch_and_time_it(&client, "https://other-target.invalid/api");
+    assert!(baseline_result.starts_with("error:"), "setup: baseline fetch must fail with a real network error, got: {}", baseline_result);
+
     // Registers interception for a *different* pattern than the one this
     // test actually fetches from.
     let mut mock = spawn_mock_and_wait_ready(
@@ -1297,19 +1434,7 @@ fn test_mock_leaves_non_matching_requests_untouched() {
         r#"{"faked":true}"#,
     );
 
-    client
-        .evaluate("window.runFetch('https://other-target.invalid/api'); 'started'")
-        .expect("triggering the fetch must not itself error");
-
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let mut result = "pending".to_string();
-    while std::time::Instant::now() < deadline {
-        result = client.evaluate("document.getElementById('result').textContent").unwrap();
-        if result != "pending" {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
+    let (with_mock_elapsed, result) = run_fetch_and_time_it(&client, "https://other-target.invalid/api");
 
     let _ = mock.kill();
     let _ = mock.wait();
@@ -1324,6 +1449,52 @@ fn test_mock_leaves_non_matching_requests_untouched() {
         result
     );
     assert_ne!(result, r#"ok:{"faked":true}"#, "must not have received the fake body meant for a different pattern");
+
+    // "No added latency/stalling": a relative comparison against this same
+    // test's own baseline, not an absolute threshold — robust to whatever
+    // this machine's real DNS-failure latency happens to be, while still
+    // catching a real regression (e.g. mock's loop swallowing the event
+    // and only releasing it after some retry/backoff).
+    assert!(
+        with_mock_elapsed <= baseline_elapsed * 3 + std::time::Duration::from_secs(1),
+        "a non-matching request took {:?} with mock active vs {:?} baseline — mock must not add meaningful latency to unrelated traffic",
+        with_mock_elapsed,
+        baseline_elapsed
+    );
+}
+
+/// @covers: mock
+#[test]
+#[ignore = "requires a running Chromium instance"]
+fn test_normal_commands_are_unaffected_when_mock_is_never_invoked() {
+    let port = next_port();
+    let client = CdpClientBuilder::new(fetch_fixture_url())
+        .port(port)
+        .launch()
+        .expect("setup: launch must succeed");
+
+    // `mock` is never spawned anywhere in this test — the whole point is a
+    // session that has never touched the Fetch domain at all, proving
+    // chromiumctl-cli's behavior is byte-for-byte the same as it was
+    // before `mock` existed, not merely "safe once mock has run and been
+    // killed" (which the other `mock` tests above already exercise).
+    let eval_output = cli()
+        .args(["eval", "--port", &port.to_string(), "--script", "1 + 1"])
+        .output()
+        .expect("failed to run chromiumctl-cli eval");
+    assert!(eval_output.status.success(), "eval must behave normally, stderr: {}", String::from_utf8_lossy(&eval_output.stderr));
+    assert_eq!(String::from_utf8_lossy(&eval_output.stdout).trim(), "2");
+
+    // A real network request must reach its real (nonexistent) destination
+    // exactly as it always has — no interception machinery is listening.
+    let (_, result) = run_fetch_and_time_it(&client, "https://never-mocked-target.invalid/api");
+    assert!(
+        result.starts_with("error:"),
+        "with mock never invoked, a fetch must behave exactly as it always has (real network error), got: {}",
+        result
+    );
+
+    drop(client);
 }
 
 /// @covers: mock
