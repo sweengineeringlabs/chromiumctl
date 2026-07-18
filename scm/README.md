@@ -29,7 +29,7 @@ Each e2e test lives with whichever crate owns the `CARGO_BIN_EXE_*` binary it de
 
 ```toml
 [dependencies]
-browsectl = "0.4"
+browsectl = "0.5"
 ```
 
 Requires a Chromium-based browser installed on the machine. Set `CHROME_PATH` to override auto-discovery.
@@ -83,7 +83,7 @@ let client = CdpClientBuilder::new("https://example.com")
 
 ```toml
 [dependencies]
-browsectl = { version = "0.4", features = ["android"] }
+browsectl = { version = "0.5", features = ["android"] }
 ```
 
 ```rust

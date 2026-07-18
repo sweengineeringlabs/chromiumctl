@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-07-18
+
+### Changed
+- Workspace restructured from a single combined crate into two published packages: `browsectl` (library) and `browsectl-bin` (CLI, installs `browse`) (#14)
+- Repository renamed `chromiumctl` → `browsectl` on GitHub; remote and crate metadata updated to match (#15)
+- MSRV bumped to 1.97 (current latest stable)
+- `CHROMIUMCTL_SESSION_DIR` → `BROWSECTL_SESSION_DIR`; matching temp-file/dir prefixes renamed to `browsectl_*`
+
+### Added
+- `browse version`/`--version` — the CLI previously had no way to report its own version
+
+### Documentation
+- Root `README.md` rewritten as intro + W3; new `scm/README.md` carries the full API/CLI reference; `architecture.md` and `developer_guide.md` (renamed from `developer-guide.md`) updated for the new crate structure (#16)
+- RFC-0001/0002/0003 marked Implemented with the version that shipped them
+
 ## [0.4.1] — 2026-07-17
 
 ### Testing

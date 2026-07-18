@@ -28,7 +28,7 @@ name = "cli_e2e_test"
 path = "tests/src/cli_e2e_test.rs"
 
 [dependencies]
-browsectl = { path = "../browsectl", version = "0.4.1" }
+browsectl = { path = "../browsectl", version = "0.5.0" }
 serde.workspace         = true
 serde_json.workspace    = true
 data-encoding.workspace = true
