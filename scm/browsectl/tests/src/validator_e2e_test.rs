@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use cdp_client::Validator;
+use browsectl::Validator;
 
 struct AgeGuard(i32);
 

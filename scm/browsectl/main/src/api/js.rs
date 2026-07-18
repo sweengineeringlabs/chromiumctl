@@ -4,18 +4,18 @@
 /// `DOM.getFlattenedDocument`, which this crate does not use.
 ///
 /// Meant to be embedded inside a larger `(function() { ... })()` snippet,
-/// then called as `__cdp_client_deepQuerySelector(document, selector)`.
+/// then called as `__browsectl_deepQuerySelector(document, selector)`.
 /// Safe to embed multiple times per snippet or across separate `evaluate`
 /// calls — it's scoped to whatever IIFE it's pasted into, not the page's
 /// global scope.
 pub fn deep_query_selector_js() -> &'static str {
-    r#"function __cdp_client_deepQuerySelector(root, selector) {
+    r#"function __browsectl_deepQuerySelector(root, selector) {
         var direct = root.querySelector(selector);
         if (direct) return direct;
         var hosts = root.querySelectorAll('*');
         for (var i = 0; i < hosts.length; i++) {
             if (hosts[i].shadowRoot) {
-                var found = __cdp_client_deepQuerySelector(hosts[i].shadowRoot, selector);
+                var found = __browsectl_deepQuerySelector(hosts[i].shadowRoot, selector);
                 if (found) return found;
             }
         }
@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn test_deep_query_selector_js_declares_the_expected_function_name() {
         let js = deep_query_selector_js();
-        assert!(js.contains("function __cdp_client_deepQuerySelector(root, selector)"));
+        assert!(js.contains("function __browsectl_deepQuerySelector(root, selector)"));
     }
 
     #[test]

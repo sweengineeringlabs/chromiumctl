@@ -1,4 +1,4 @@
-use cdp_client::PageEvaluator;
+use browsectl::PageEvaluator;
 
 use super::{attach, expect_value, parse_value, validate_connect_args, CliError};
 
@@ -43,12 +43,12 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
         .evaluate(&format!(
             "(function() {{ \
                 {deep_query_selector} \
-                var el = __cdp_client_deepQuerySelector(document, {selector}); \
+                var el = __browsectl_deepQuerySelector(document, {selector}); \
                 if (!el) return 'no'; \
                 el.focus(); \
                 return 'yes'; \
             }})()",
-            deep_query_selector = cdp_client::deep_query_selector_js(),
+            deep_query_selector = browsectl::deep_query_selector_js(),
             selector = selector_json,
         ))
         .map_err(CliError::ExecutionFailed)?;

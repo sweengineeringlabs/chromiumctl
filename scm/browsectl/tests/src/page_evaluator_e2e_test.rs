@@ -4,7 +4,7 @@
 //   cargo test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use cdp_client::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 
 fn fixture_url() -> &'static str {
     "data:text/html,<html><head><style>.box{width:100px;height:50px;background:red}</style></head>\

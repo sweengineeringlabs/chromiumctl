@@ -4,7 +4,7 @@
 //   cargo test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used)]
 
-use cdp_client::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 
 fn fixture_url() -> String {
     "data:text/html,<html><body><p id=x>hello</p></body></html>".into()

@@ -1,6 +1,6 @@
 // Tests for PlatformBrowserLocator browser discovery.
 
-use cdp_client::CdpClient;
+use browsectl::CdpClient;
 
 #[test]
 fn test_platform_browser_locator_attach_fails_on_no_debugger() {

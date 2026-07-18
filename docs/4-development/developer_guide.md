@@ -29,7 +29,7 @@ cargo test --lib
 cargo test -- --ignored --test-threads=1
 ```
 
-Unit tests live in `#[cfg(test)]` blocks inside source files. Integration tests use the `_e2e_test.rs` suffix and live with whichever crate owns the binary/library surface they exercise: `scm/cdp-client/tests/` for everything that only needs the library (including the `android`-gated `adb_locator_e2e_test`, since it drives `attach_android` directly, not the CLI), and `scm/bin/tests/cli_e2e_test.rs` for the one suite that spawns the `browse` binary (it needs `CARGO_BIN_EXE_browse`, which is only set within `browse`'s own package).
+Unit tests live in `#[cfg(test)]` blocks inside source files. Integration tests use the `_e2e_test.rs` suffix and live with whichever crate owns the binary/library surface they exercise: `scm/browsectl/tests/` for everything that only needs the library (including the `android`-gated `adb_locator_e2e_test`, since it drives `attach_android` directly, not the CLI), and `scm/bin/tests/cli_e2e_test.rs` for the one suite that spawns the `browse` binary (it needs `CARGO_BIN_EXE_browse`, which is only set within `browse`'s own package).
 
 To target a specific browser:
 
@@ -41,17 +41,17 @@ CHROME_PATH=/opt/chromium/chrome cargo test -- --ignored --test-threads=1
 
 Most CDP methods are thin wrappers around `client.send()`. To expose one as a typed helper:
 
-1. Add the method to the `PageEvaluator` trait in `scm/cdp-client/main/src/api/traits/page_evaluator.rs` as a default implementation that calls `self.evaluate(js)`.
-2. If the method needs a new return type (e.g. a parsed struct), define it in `scm/cdp-client/main/src/api/types/`.
-3. If the method cannot be expressed as a JS expression (e.g. `Network.enable`), implement it directly on `CdpClient` in `scm/cdp-client/main/src/client.rs` via `self.send_cdp(method, params)`.
+1. Add the method to the `PageEvaluator` trait in `scm/browsectl/main/src/api/traits/page_evaluator.rs` as a default implementation that calls `self.evaluate(js)`.
+2. If the method needs a new return type (e.g. a parsed struct), define it in `scm/browsectl/main/src/api/types/`.
+3. If the method cannot be expressed as a JS expression (e.g. `Network.enable`), implement it directly on `CdpClient` in `scm/browsectl/main/src/client.rs` via `self.send_cdp(method, params)`.
 
 Example — wrapping `Page.getNavigationHistory`:
 
 ```rust
-// In scm/cdp-client/main/src/api/traits/page_evaluator.rs
+// In scm/browsectl/main/src/api/traits/page_evaluator.rs
 fn get_navigation_history(&self) -> Result<serde_json::Value, String>;
 
-// In scm/cdp-client/main/src/client.rs (CdpClient impl)
+// In scm/browsectl/main/src/client.rs (CdpClient impl)
 fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
     self.send("Page.getNavigationHistory", serde_json::json!({}))
 }
@@ -68,16 +68,16 @@ fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
 
 `src/` is always the leaf folder holding actual source, nested under a named unit (`main/`, `tests/`, or `examples/<name>/`) — every non-lib target has an explicit `[[bin]]`/`[[example]]`/`[[test]]` entry in `Cargo.toml` pointing at it, since none of these paths match Cargo's auto-discovery conventions.
 
-Two workspace members: `cdp-client` (the library) and `bin` (the CLI, package `browsectl`). Each e2e test lives with whichever crate owns the `CARGO_BIN_EXE_*`/library surface it needs — see [`scm/README.md`](../../scm/README.md) for the top-level layout.
+Two workspace members: `browsectl` (the library, published) and `bin` (package `browse`, the CLI — deliberately unpublished, `publish = false`). Each e2e test lives with whichever crate owns the `CARGO_BIN_EXE_*`/library surface it needs — see [`scm/README.md`](../../scm/README.md) for the top-level layout.
 
 ```
 scm/
-├── Cargo.toml                  Workspace root (members: cdp-client, bin)
+├── Cargo.toml                  Workspace root (members: browsectl, bin)
 ├── Cargo.lock
 ├── config/
 │   └── deny.toml               cargo-deny config (cargo deny check --config config/deny.toml)
 │
-├── cdp-client/                 Package "cdp-client" — lib name `cdp_client`
+├── browsectl/                  Package "browsectl" — the published library
 │   ├── Cargo.toml
 │   ├── main/src/
 │   │   ├── lib.rs              Public surface — re-exports from api/ and saf/
@@ -117,8 +117,8 @@ scm/
 │       ├── platform_browser_locator_e2e_test.rs  Platform discovery smoke tests
 │       └── adb_locator_e2e_test.rs           attach_android (feature `android`)
 │
-└── bin/                        Package "browsectl" — binary `browse`
-    ├── Cargo.toml               Depends on cdp-client (version-pinned path dep)
+└── bin/                        Package "browse" — unpublished, builds binary `browse`
+    ├── Cargo.toml               Depends on browsectl (path dep, no version needed — never published)
     ├── main/src/
     │   ├── main.rs              browse binary: arg dispatch, help, version
     │   ├── session.rs           SessionStore: launch/stop/reap record tracking

@@ -1,14 +1,15 @@
 [package]
-name = "browsectl"
+name = "browse"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
-description = "CLI for the Chrome DevTools Protocol — launch, attach, evaluate JS, control viewport (installs the `browse` command)"
+description = "CLI for the Chrome DevTools Protocol, built on the browsectl library — launch, attach, evaluate JS, control viewport"
 keywords = ["cdp", "chromium", "chrome", "headless", "devtools"]
 categories = ["development-tools::testing", "command-line-utilities"]
+publish = false
 
 [package.metadata.struct-engine]
 application_type = "cli"
@@ -19,16 +20,16 @@ name = "browse"
 path = "main/src/main.rs"
 
 [features]
-# Enables --package (Android WebView attach via adb). Forwards to cdp-client's
+# Enables --package (Android WebView attach via adb). Forwards to browsectl's
 # own android feature, which implements the attach itself.
-android = ["cdp-client/android"]
+android = ["browsectl/android"]
 
 [[test]]
 name = "cli_e2e_test"
 path = "tests/src/cli_e2e_test.rs"
 
 [dependencies]
-cdp-client = { path = "../cdp-client", version = "0.4.1" }
+browsectl = { path = "../browsectl" }
 serde.workspace         = true
 serde_json.workspace    = true
 data-encoding.workspace = true

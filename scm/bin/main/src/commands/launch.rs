@@ -1,4 +1,4 @@
-use cdp_client::CdpClientBuilder;
+use browsectl::CdpClientBuilder;
 
 use crate::os_process::ProcessLocator;
 use crate::session::{now_unix_secs, SessionRecord, SessionStore};

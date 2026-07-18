@@ -200,7 +200,7 @@ impl CdpClient {
             .collect::<Result<Vec<_>, _>>()?;
 
         let js = format!(
-            "(function() {{ {deep_query_selector} return __cdp_client_deepQuerySelector(document, {selector}); }})()",
+            "(function() {{ {deep_query_selector} return __browsectl_deepQuerySelector(document, {selector}); }})()",
             deep_query_selector = crate::api::js::deep_query_selector_js(),
             selector = crate::api::js::js_string_literal(selector)?,
         );
@@ -503,7 +503,7 @@ mod tests {
 
     #[test]
     fn test_resolve_existing_absolute_path_leaves_an_already_absolute_path_unchanged_in_meaning() {
-        let dir = std::env::temp_dir().join(format!("cdp_client_test_abs_{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("browsectl_client_test_abs_{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("setup: temp dir must be creatable");
         let file = dir.join("abs.txt");
         std::fs::write(&file, b"x").expect("setup: file must be writable");

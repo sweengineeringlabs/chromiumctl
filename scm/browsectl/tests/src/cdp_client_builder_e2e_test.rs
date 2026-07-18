@@ -4,7 +4,7 @@
 //   cargo test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use cdp_client::{CdpClientBuilder, PageEvaluator};
+use browsectl::{CdpClientBuilder, PageEvaluator};
 
 #[test]
 #[ignore]

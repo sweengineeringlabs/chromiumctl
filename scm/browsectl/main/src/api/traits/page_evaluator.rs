@@ -17,7 +17,7 @@ pub trait PageEvaluator {
         let js = format!(
             r#"(function() {{
                 {deep_query_selector}
-                var el = __cdp_client_deepQuerySelector(document, {selector});
+                var el = __browsectl_deepQuerySelector(document, {selector});
                 if (!el) return '__NOT_FOUND__';
                 return window.getComputedStyle(el).getPropertyValue({property});
             }})()"#,
@@ -43,7 +43,7 @@ pub trait PageEvaluator {
         let js = format!(
             r#"(function() {{
                 {deep_query_selector}
-                var el = __cdp_client_deepQuerySelector(document, {selector});
+                var el = __browsectl_deepQuerySelector(document, {selector});
                 if (!el) return '__NOT_FOUND__';
                 return window.getComputedStyle(el, {pseudo}).getPropertyValue({property});
             }})()"#,
@@ -65,7 +65,7 @@ pub trait PageEvaluator {
         let js = format!(
             r#"(function() {{
                 {deep_query_selector}
-                var el = __cdp_client_deepQuerySelector(document, {selector});
+                var el = __browsectl_deepQuerySelector(document, {selector});
                 if (!el) return '__NOT_FOUND__';
                 var r = el.getBoundingClientRect();
                 return JSON.stringify({{ x: r.x, y: r.y, width: r.width, height: r.height }});

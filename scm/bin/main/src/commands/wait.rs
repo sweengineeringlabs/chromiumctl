@@ -1,4 +1,4 @@
-use cdp_client::PageEvaluator;
+use browsectl::PageEvaluator;
 use std::time::{Duration, Instant};
 
 use super::{attach, expect_value, parse_value, validate_connect_args, CliError};
@@ -43,8 +43,8 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
 
     let condition_js = if let Some(sel) = &selector {
         format!(
-            "(function() {{ {deep_query_selector} return __cdp_client_deepQuerySelector(document, {selector}) !== null; }})()",
-            deep_query_selector = cdp_client::deep_query_selector_js(),
+            "(function() {{ {deep_query_selector} return __browsectl_deepQuerySelector(document, {selector}) !== null; }})()",
+            deep_query_selector = browsectl::deep_query_selector_js(),
             selector = json_string(sel)?,
         )
     } else if let Some(txt) = &text {

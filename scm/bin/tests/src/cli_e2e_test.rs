@@ -6,7 +6,7 @@
 //   cargo test --test cli_e2e_test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use cdp_client::{CdpClient, CdpClientBuilder, PageEvaluator};
+use browsectl::{CdpClient, CdpClientBuilder, PageEvaluator};
 use std::process::Command;
 use std::sync::atomic::{AtomicU16, Ordering};
 

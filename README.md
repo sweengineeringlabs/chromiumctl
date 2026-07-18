@@ -6,8 +6,8 @@ A minimal Chromium DevTools Protocol (CDP) client for Rust, and the `browse` CLI
 
 BrowserCtl is two crates:
 
-- **`cdp-client`** — a synchronous, zero-async-runtime CDP client library. Launch or attach to a Chromium-based browser (Chrome, Edge, Brave, Arc, Vivaldi), evaluate JavaScript, read computed CSS, resize the viewport, navigate — over a plain WebSocket, no `tokio` required.
-- **`browsectl`** — a CLI (`browse`) exposing the library over the command line for shell scripts, CI, and non-Rust callers: launch/attach, eval, screenshot, click, input, file-input injection, network mocking, orphaned-session cleanup.
+- **`browsectl`** — a synchronous, zero-async-runtime CDP client library, published to crates.io. Launch or attach to a Chromium-based browser (Chrome, Edge, Brave, Arc, Vivaldi), evaluate JavaScript, read computed CSS, resize the viewport, navigate — over a plain WebSocket, no `tokio` required.
+- **`browse`** (package `browse`, not published — build from source) — a CLI exposing the library over the command line for shell scripts, CI, and non-Rust callers: launch/attach, eval, screenshot, click, input, file-input injection, network mocking, orphaned-session cleanup.
 
 ## Why
 
@@ -15,22 +15,27 @@ Most CDP tooling is either a full browser-automation framework (Puppeteer/Playwr
 
 ## When / How
 
-Use `cdp-client` as a Rust dependency when you need programmatic control of a real browser — screenshot testing, scraping behind JS rendering, driving a page in an integration test. Use `browse` (via `browsectl`) when you want the same control from a shell script, a CI job, or any non-Rust caller.
+Use `browsectl` as a Rust dependency when you need programmatic control of a real browser — screenshot testing, scraping behind JS rendering, driving a page in an integration test.
 
 ```toml
 [dependencies]
-cdp-client = "0.4"
+browsectl = "0.4"
 ```
 
 ```rust
-use cdp_client::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 
 let mut client = CdpClient::launch("https://example.com")?;
 let title = client.evaluate("document.title")?;
 ```
 
+The `browse` CLI wraps the same library for shell scripts, CI, and non-Rust callers. It isn't published — build it from a clone of this repo:
+
 ```sh
-cargo install browsectl
+git clone https://github.com/sweengineeringlabs/browsectl
+cd browsectl/scm
+cargo install --path bin
+
 browse launch --url https://example.com --port 9222
 browse eval --port 9222 --script "document.title"
 ```

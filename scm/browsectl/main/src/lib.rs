@@ -1,11 +1,11 @@
-//! `cdp-client` — minimal Chromium DevTools Protocol client.
+//! `browsectl` — minimal Chromium DevTools Protocol client.
 //!
 //! Works with any Chromium-based browser: Chrome, Edge, Brave, Arc, Vivaldi.
 //!
 //! ## Quick start
 //!
 //! ```no_run
-//! use cdp_client::{CdpClient, PageEvaluator};
+//! use browsectl::{CdpClient, PageEvaluator};
 //!
 //! // Launch headless Chrome and connect
 //! let mut client = CdpClient::launch("https://example.com").unwrap();

@@ -1,5 +1,5 @@
 [package]
-name = "cdp-client"
+name = "browsectl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,7 +15,7 @@ application_type = "lib"
 service_type = "client"
 
 [lib]
-name = "cdp_client"
+name = "browsectl"
 path = "main/src/lib.rs"
 
 [features]
