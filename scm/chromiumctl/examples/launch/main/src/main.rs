@@ -1,6 +1,6 @@
 #![allow(clippy::expect_used)]
 
-use chromiumctl::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 
 fn main() {
     let client = CdpClient::launch("https://example.com")

@@ -3,7 +3,7 @@
 // Requires a Chromium-based browser. Run with:
 //   cargo test -- --ignored --test-threads=1
 
-use chromiumctl::CdpClient;
+use browsectl::CdpClient;
 
 /// Verifies browser discovery by attempting a launch — uses BrowserLocator internally.
 #[test]

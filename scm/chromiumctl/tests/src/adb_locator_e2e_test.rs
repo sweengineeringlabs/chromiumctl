@@ -10,7 +10,7 @@
 #![cfg(feature = "android")]
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use chromiumctl::{CdpClient, CdpClientBuilder, PageEvaluator};
+use browsectl::{CdpClient, CdpClientBuilder, PageEvaluator};
 
 /// @covers: attach_android
 #[test]

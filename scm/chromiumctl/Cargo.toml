@@ -1,5 +1,5 @@
 [package]
-name = "chromiumctl"
+name = "browsectl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,7 +15,7 @@ application_type = "lib"
 service_type = "client"
 
 [lib]
-name = "chromiumctl"
+name = "browsectl"
 path = "main/src/lib.rs"
 
 [features]
@@ -25,7 +25,7 @@ path = "main/src/lib.rs"
 android = []
 
 [[bin]]
-name = "chromiumctl-cli"
+name = "browse"
 path = "bin/chromiumctl-cli/main/src/main.rs"
 
 [[example]]

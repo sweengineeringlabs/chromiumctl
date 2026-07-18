@@ -3,7 +3,7 @@
 // BrowserSession is the SPI trait — tested via CdpClient (the default implementor).
 #![allow(clippy::unwrap_used)]
 
-use chromiumctl::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 
 #[test]
 #[ignore]

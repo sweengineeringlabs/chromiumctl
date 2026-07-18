@@ -13,7 +13,7 @@ use tungstenite::{stream::MaybeTlsStream, WebSocket};
 /// ## Example
 ///
 /// ```no_run
-/// use chromiumctl::{CdpClient, PageEvaluator};
+/// use browsectl::{CdpClient, PageEvaluator};
 ///
 /// let client = CdpClient::launch("https://example.com").unwrap();
 /// let title  = client.evaluate("document.title").unwrap();

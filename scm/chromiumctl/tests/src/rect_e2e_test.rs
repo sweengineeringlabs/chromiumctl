@@ -1,4 +1,4 @@
-use chromiumctl::Rect;
+use browsectl::Rect;
 
 #[test]
 fn test_right_equals_x_plus_width() {

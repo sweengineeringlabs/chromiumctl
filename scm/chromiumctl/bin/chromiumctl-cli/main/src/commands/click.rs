@@ -1,4 +1,4 @@
-use chromiumctl::PageEvaluator;
+use browsectl::PageEvaluator;
 
 use super::{attach, expect_value, parse_value, validate_connect_args, CliError};
 

@@ -5,7 +5,7 @@
 //! ## Quick start
 //!
 //! ```no_run
-//! use chromiumctl::{CdpClient, PageEvaluator};
+//! use browsectl::{CdpClient, PageEvaluator};
 //!
 //! // Launch headless Chrome and connect
 //! let mut client = CdpClient::launch("https://example.com").unwrap();

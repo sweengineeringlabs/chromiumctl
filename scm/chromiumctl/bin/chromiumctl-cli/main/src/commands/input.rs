@@ -1,4 +1,4 @@
-use chromiumctl::PageEvaluator;
+use browsectl::PageEvaluator;
 
 use super::{attach, expect_value, parse_value, validate_connect_args, CliError};
 
@@ -48,7 +48,7 @@ pub fn execute(args: &[String]) -> Result<(), CliError> {
                 el.focus(); \
                 return 'yes'; \
             }})()",
-            deep_query_selector = chromiumctl::deep_query_selector_js(),
+            deep_query_selector = browsectl::deep_query_selector_js(),
             selector = selector_json,
         ))
         .map_err(CliError::ExecutionFailed)?;

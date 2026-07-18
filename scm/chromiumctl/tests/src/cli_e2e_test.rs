@@ -1,4 +1,4 @@
-// E2e tests for the `chromiumctl-cli` binary.
+// E2e tests for the `browse` binary.
 //
 // Tests that don't need a running browser (arg validation, connection
 // failures) run by default. Tests that drive a real Chromium instance
@@ -6,7 +6,7 @@
 //   cargo test --test cli_e2e_test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use chromiumctl::{CdpClient, CdpClientBuilder, PageEvaluator};
+use browsectl::{CdpClient, CdpClientBuilder, PageEvaluator};
 use std::process::Command;
 use std::sync::atomic::{AtomicU16, Ordering};
 
@@ -17,7 +17,7 @@ fn next_port() -> u16 {
 }
 
 fn cli() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_chromiumctl-cli"))
+    Command::new(env!("CARGO_BIN_EXE_browse"))
 }
 
 fn unique_temp_file(name: &str) -> std::path::PathBuf {
@@ -928,7 +928,7 @@ fn unique_session_dir(name: &str) -> std::path::PathBuf {
 /// simulating exactly the RFC-0003 scenario (the process that called
 /// `launch` died before ever calling `stop`).
 fn launch_with_dead_caller(port: u16, dir: &std::path::Path, url: &str) {
-    let cli_path = env!("CARGO_BIN_EXE_chromiumctl-cli");
+    let cli_path = env!("CARGO_BIN_EXE_browse");
     let output = if cfg!(windows) {
         // Separate argv entries (not one joined string) so cmd.exe never
         // re-parses `<`/`>`/`|`/`&` out of our own arguments — cmd.exe only

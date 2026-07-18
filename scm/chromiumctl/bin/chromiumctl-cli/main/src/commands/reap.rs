@@ -102,7 +102,7 @@ fn caller_is_alive(record: &SessionRecord) -> bool {
 /// (already gone, port unreachable) is not an error — the session record is
 /// removed either way, matching RFC-0003's step 4.
 fn close_and_forget(record: &SessionRecord) {
-    if let Ok(client) = chromiumctl::CdpClient::attach(record.port) {
+    if let Ok(client) = browsectl::CdpClient::attach(record.port) {
         let _ = client.send("Browser.close", serde_json::json!({}));
     }
 }

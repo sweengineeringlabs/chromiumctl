@@ -7,7 +7,7 @@
 //   cargo test -- --ignored --test-threads=1
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use chromiumctl::{CdpClient, PageEvaluator};
+use browsectl::{CdpClient, PageEvaluator};
 use tungstenite as _; // tungstenite WebSocket transport is exercised by every CdpClient call below
 
 /// Inline HTML fixture as a data: URL — no file-system access required.
