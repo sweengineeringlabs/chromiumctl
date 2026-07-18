@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "chromiumctl bootstrap"
+echo "browsectl bootstrap"
 echo "Requires: Rust 1.75+, a Chromium-based browser for integration tests"
 
 cd "$(dirname "$0")/scm"

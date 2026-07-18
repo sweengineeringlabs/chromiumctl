@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Write-Host "chromiumctl bootstrap"
+Write-Host "browsectl bootstrap"
 Write-Host "Requires: Rust 1.75+, a Chromium-based browser for integration tests"
 
 Set-Location (Join-Path $PSScriptRoot "scm")

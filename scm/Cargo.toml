@@ -9,7 +9,7 @@ members = [
 version = "0.4.1"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/sweengineeringlabs/chromiumctl"
+repository = "https://github.com/sweengineeringlabs/browsectl"
 authors = ["Senior Agentic Engine Engineer <engineers@swelabs.io>"]
 rust-version = "1.75"
 
