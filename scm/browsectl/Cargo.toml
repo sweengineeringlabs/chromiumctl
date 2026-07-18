@@ -26,7 +26,7 @@ path = "main/src/lib.rs"
 # Enables CdpClient::attach_android, which shells out to `adb` to attach to a
 # debuggable Android WebView. Off by default — the crate's core scope is
 # desktop Chromium (Chrome/Edge/Brave/Arc/Vivaldi).
-android = []
+android = ["dep:dirs"]
 
 [[example]]
 name = "launch"
@@ -37,51 +37,11 @@ name = "fake-adb-for-tests"
 path = "test-support/fake-adb-for-tests/main/src/main.rs"
 required-features = ["android"]
 
-[[test]]
-name = "adb_locator_e2e_test"
-path = "tests/src/adb_locator_e2e_test.rs"
-
-[[test]]
-name = "browser_locator_e2e_test"
-path = "tests/src/browser_locator_e2e_test.rs"
-
-[[test]]
-name = "browser_session_e2e_test"
-path = "tests/src/browser_session_e2e_test.rs"
-
-[[test]]
-name = "cdp_client_builder_e2e_test"
-path = "tests/src/cdp_client_builder_e2e_test.rs"
-
-[[test]]
-name = "cdp_client_e2e_test"
-path = "tests/src/cdp_client_e2e_test.rs"
-
-[[test]]
-name = "client_e2e_test"
-path = "tests/src/client_e2e_test.rs"
-
-[[test]]
-name = "page_evaluator_e2e_test"
-path = "tests/src/page_evaluator_e2e_test.rs"
-
-[[test]]
-name = "platform_browser_locator_e2e_test"
-path = "tests/src/platform_browser_locator_e2e_test.rs"
-
-[[test]]
-name = "rect_e2e_test"
-path = "tests/src/rect_e2e_test.rs"
-
-[[test]]
-name = "validator_e2e_test"
-path = "tests/src/validator_e2e_test.rs"
-
 [dependencies]
 serde.workspace      = true
 serde_json.workspace = true
 tungstenite.workspace = true
-data-encoding.workspace = true
+dirs = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace  = true

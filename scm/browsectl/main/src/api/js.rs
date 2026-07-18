@@ -36,6 +36,7 @@ pub fn js_string_literal(s: &str) -> Result<String, String> {
 mod tests {
     use super::*;
 
+    /// @covers: js_string_literal
     #[test]
     fn test_js_string_literal_wraps_plain_string_in_double_quotes() {
         assert_eq!(js_string_literal("hello").unwrap(), "\"hello\"");
@@ -73,6 +74,7 @@ mod tests {
         );
     }
 
+    /// @covers: deep_query_selector_js
     #[test]
     fn test_deep_query_selector_js_declares_the_expected_function_name() {
         let js = deep_query_selector_js();

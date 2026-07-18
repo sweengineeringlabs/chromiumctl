@@ -31,12 +31,20 @@ impl AdbLocator {
                 ));
             }
         } else if cfg!(target_os = "macos") {
-            if let Ok(home) = std::env::var("HOME") {
-                candidates.push(format!("{}/Library/Android/sdk/platform-tools/adb", home));
+            if let Some(home) = dirs::home_dir() {
+                candidates.push(
+                    home.join("Library/Android/sdk/platform-tools/adb")
+                        .to_string_lossy()
+                        .into_owned(),
+                );
             }
         } else {
-            if let Ok(home) = std::env::var("HOME") {
-                candidates.push(format!("{}/Android/Sdk/platform-tools/adb", home));
+            if let Some(home) = dirs::home_dir() {
+                candidates.push(
+                    home.join("Android/Sdk/platform-tools/adb")
+                        .to_string_lossy()
+                        .into_owned(),
+                );
             }
             candidates.push("/usr/lib/android-sdk/platform-tools/adb".to_string());
         }

@@ -15,10 +15,10 @@ scm/
 │   ├── main/src/     library source
 │   ├── examples/     launch — minimal launch+evaluate example
 │   ├── test-support/ fake-adb-for-tests — stand-in `adb` binary for Android e2e tests
-│   └── tests/src/    e2e tests exercising only the library
+│   └── tests/        e2e tests exercising only the library (auto-discovered by Cargo)
 └── bin/              bin crate "browsectl-bin", published — installs the `browse` command
     ├── main/src/      CLI source
-    └── tests/src/     cli_e2e_test — the one suite that needs CARGO_BIN_EXE_browse
+    └── tests/         cli_e2e_test — the one suite that needs CARGO_BIN_EXE_browse (auto-discovered)
 ```
 
 Both crates are published to crates.io: `browsectl` (the library) and `browsectl-bin` (the CLI, installing the `browse` command via `cargo install browsectl-bin`). `browsectl-bin` depends on `browsectl`, so publish order matters: `browsectl` must go up first, then `browsectl-bin` — publishing the CLI before the library is live on the registry fails with an unresolved dependency, which is expected, not a bug.

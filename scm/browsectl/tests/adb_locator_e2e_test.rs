@@ -15,11 +15,15 @@ use browsectl::{CdpClient, CdpClientBuilder, PageEvaluator};
 /// @covers: attach_android
 #[test]
 fn test_attach_android_fails_with_actionable_error_when_adb_path_invalid() {
-    // Safety: no other test in this binary reads or writes ADB_PATH.
+    // SAFETY: e2e tests in this file run with --test-threads=1 (see
+    // developer_guide.md), and no other test in this binary reads or writes
+    // ADB_PATH concurrently with this one.
     unsafe {
         std::env::set_var("ADB_PATH", "/nonexistent/adb");
     }
     let result = CdpClient::attach_android("com.example.app");
+    // SAFETY: same single-threaded e2e invocation as the set_var above; no
+    // concurrent reader of ADB_PATH exists at this point.
     unsafe {
         std::env::remove_var("ADB_PATH");
     }
@@ -81,8 +85,9 @@ fn test_attach_android_succeeds_against_simulated_adb_and_real_browser() {
     let fake_adb = env!("CARGO_BIN_EXE_fake-adb-for-tests");
     let remove_log = std::env::temp_dir().join(format!("fake_adb_remove_{}.log", std::process::id()));
 
-    // Safety: this test binary runs this specific test in isolation with
-    // respect to these env vars (no other test in this file touches them).
+    // SAFETY: this test file runs with --test-threads=1 (see
+    // developer_guide.md), so no other test touches these env vars while
+    // this one is running.
     unsafe {
         std::env::set_var("ADB_PATH", fake_adb);
         std::env::set_var("FAKE_ADB_PACKAGE", "com.example.fake");
@@ -96,6 +101,7 @@ fn test_attach_android_succeeds_against_simulated_adb_and_real_browser() {
     // attach_android call above, but FAKE_ADB_REMOVE_LOG must stay set until
     // after `android_client` is dropped below — that's when the child
     // process reading it is actually spawned.
+    // SAFETY: same single-threaded e2e invocation as the set_var block above.
     unsafe {
         std::env::remove_var("ADB_PATH");
         std::env::remove_var("FAKE_ADB_PACKAGE");
@@ -114,6 +120,8 @@ fn test_attach_android_succeeds_against_simulated_adb_and_real_browser() {
 
     drop(android_client);
 
+    // SAFETY: same single-threaded e2e invocation as the earlier blocks in
+    // this test; no concurrent reader of FAKE_ADB_REMOVE_LOG exists here.
     unsafe {
         std::env::remove_var("FAKE_ADB_REMOVE_LOG");
     }

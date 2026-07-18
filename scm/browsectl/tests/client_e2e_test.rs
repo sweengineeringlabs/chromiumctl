@@ -262,3 +262,73 @@ fn test_wait_for_event_timeout_does_not_break_subsequent_send_calls() {
     // window.
     assert_eq!(c.evaluate("1 + 1").unwrap(), "2");
 }
+
+// ---------------------------------------------------------------------------
+// set_files
+// ---------------------------------------------------------------------------
+
+fn file_input_fixture_url() -> String {
+    let html = r#"<input type="file" id="file-input"><div id="result">none</div><script>
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            var f = e.target.files[0];
+            document.getElementById('result').textContent = f ? (f.name + ':' + f.size) : 'none';
+        });
+    </script>"#;
+    format!("data:text/html,{}", html)
+}
+
+fn unique_temp_file(name: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("browsectl_client_e2e_{}_{}", std::process::id(), name))
+}
+
+/// @covers: set_files
+#[test]
+#[ignore]
+fn test_set_files_sets_a_real_file_and_fires_change() {
+    let c = CdpClient::launch(&file_input_fixture_url()).unwrap();
+
+    let path = unique_temp_file("set_files_single.txt");
+    std::fs::write(&path, b"hello set_files").expect("setup: fixture file must be writable");
+
+    let result = c.set_files("#file-input", &[path.to_string_lossy().into_owned()]);
+    assert!(result.is_ok(), "set_files must succeed for a real file and a real input element");
+
+    let name = path.file_name().unwrap().to_string_lossy().into_owned();
+    assert_eq!(
+        c.evaluate("document.getElementById('result').textContent").unwrap(),
+        format!("{}:15", name),
+        "the input's change handler must observe the real file's name and size — proves \
+         DOM.setFileInputFiles actually ran, not just that set_files returned Ok"
+    );
+
+    let _ = std::fs::remove_file(&path);
+}
+
+/// @covers: set_files
+#[test]
+#[ignore]
+fn test_set_files_returns_err_when_file_does_not_exist() {
+    let c = CdpClient::launch(&file_input_fixture_url()).unwrap();
+    let missing = unique_temp_file("set_files_missing_does_not_exist.txt");
+
+    let err = c
+        .set_files("#file-input", &[missing.to_string_lossy().into_owned()])
+        .expect_err("set_files must reject a file path that does not exist on disk");
+    assert!(err.contains("not found"), "error should explain why: {err}");
+}
+
+/// @covers: set_files
+#[test]
+#[ignore]
+fn test_set_files_returns_err_when_selector_not_found() {
+    let c = CdpClient::launch(&file_input_fixture_url()).unwrap();
+    let path = unique_temp_file("set_files_selector_miss.txt");
+    std::fs::write(&path, b"x").expect("setup: fixture file must be writable");
+
+    let err = c
+        .set_files("#does-not-exist", &[path.to_string_lossy().into_owned()])
+        .expect_err("set_files must reject a selector matching no element");
+    assert!(err.contains("not found"), "error should explain why: {err}");
+
+    let _ = std::fs::remove_file(&path);
+}

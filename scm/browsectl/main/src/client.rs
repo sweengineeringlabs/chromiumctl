@@ -530,11 +530,13 @@ mod tests {
         assert!(listener.is_ok(), "port {port} should be bindable right after being picked");
     }
 
-    /// @covers: pick_free_port - the actual property that fixes issue #7
-    /// (concurrent csslense process launches colliding on a predictable
-    /// starting port). Simulates concurrent launches via threads, since
-    /// pick_free_port has no cross-process state to race on in the first
-    /// place - the OS's ephemeral port allocator is the thing under test.
+    /// @covers: pick_free_port
+    ///
+    /// Tests the actual property that fixes issue #7 (concurrent csslense
+    /// process launches colliding on a predictable starting port). Simulates
+    /// concurrent launches via threads, since pick_free_port has no
+    /// cross-process state to race on in the first place — the OS's
+    /// ephemeral port allocator is the thing under test.
     #[test]
     fn test_pick_free_port_concurrent_calls_do_not_collide() {
         use std::thread;
@@ -595,14 +597,18 @@ mod tests {
 
     /// @covers: send
     #[test]
+    #[ignore = "requires a running Chromium instance"]
     fn test_send_dispatches_cdp_command_when_browser_available() {
-        if let Ok(c) = CdpClient::launch("data:text/html,<p>test</p>") {
-            let result = c.send(
-                "Runtime.evaluate",
-                serde_json::json!({ "expression": "1", "returnByValue": true }),
-            );
-            assert!(result.is_ok(), "send must succeed when browser is running");
-        }
+        let c = CdpClient::launch("data:text/html,<p>test</p>").unwrap();
+        let result = c.send(
+            "Runtime.evaluate",
+            serde_json::json!({ "expression": "1", "returnByValue": true }),
+        );
+        assert!(result.is_ok(), "send must succeed when browser is running");
+        assert_eq!(
+            result.unwrap()["result"]["value"], 1,
+            "send must return the CDP response containing the evaluated value, not just any Ok"
+        );
     }
 
     /// @covers: send

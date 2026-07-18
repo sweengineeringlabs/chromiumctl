@@ -27,10 +27,6 @@ path = "main/src/main.rs"
 # own android feature, which implements the attach itself.
 android = ["browsectl/android"]
 
-[[test]]
-name = "cli_e2e_test"
-path = "tests/src/cli_e2e_test.rs"
-
 [dependencies]
 browsectl = { path = "../browsectl", version = "0.5.0" }
 serde.workspace         = true

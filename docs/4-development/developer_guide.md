@@ -66,7 +66,7 @@ fn get_navigation_history(&self) -> Result<serde_json::Value, String> {
 
 ## Project structure walkthrough
 
-`src/` is always the leaf folder holding actual source, nested under a named unit (`main/`, `tests/`, or `examples/<name>/`) — every non-lib target has an explicit `[[bin]]`/`[[example]]`/`[[test]]` entry in `Cargo.toml` pointing at it, since none of these paths match Cargo's auto-discovery conventions.
+`src/` is the leaf folder holding actual source for library/binary/example targets (`main/`, `examples/<name>/`) — those need an explicit `[[bin]]`/`[[example]]` entry in `Cargo.toml` since the path doesn't match Cargo's auto-discovery convention. `tests/` is the one exception: test files sit directly under `tests/*.rs` (no `src/` nesting, no explicit `[[test]]` entries) so Cargo auto-discovers them — this also matters for `arch`'s test-coverage checks (`all_methods_tested`, `test_covers_annotation`), which key off Cargo's own test-target discovery.
 
 Two workspace members, both published: `browsectl` (the library) and `bin` (package `browsectl-bin`, the CLI — installs `browse`). `browsectl-bin` depends on `browsectl`, so it publishes second, after `browsectl` is live on crates.io. Each e2e test lives with whichever crate owns the `CARGO_BIN_EXE_*`/library surface it needs — see [`scm/README.md`](../../scm/README.md) for the top-level layout.
 
@@ -104,7 +104,7 @@ scm/
 │   │                           (env!("CARGO_BIN_EXE_...") only works for [[bin]], not
 │   │                           [[example]]); lives here because it's what adb_locator_e2e_test
 │   │                           (also in this crate) needs at CARGO_BIN_EXE_fake-adb-for-tests
-│   └── tests/src/
+│   └── tests/                  Auto-discovered by Cargo — no [[test]] entries in Cargo.toml
 │       ├── client_e2e_test.rs               CdpClient lifecycle
 │       ├── page_evaluator_e2e_test.rs        PageEvaluator methods
 │       ├── rect_e2e_test.rs                  Rect helpers (offline)
@@ -119,11 +119,17 @@ scm/
 └── bin/                        Package "browsectl-bin", published — builds binary `browse`
     ├── Cargo.toml               Depends on browsectl (version-pinned path dep, required to publish)
     ├── main/src/
-    │   ├── main.rs              browse binary: arg dispatch, help, version
+    │   ├── main.rs              browse binary: pure arg dispatch, no logic
+    │   ├── help.rs               print_help, print_version (static usage/version text)
     │   ├── session.rs           SessionStore: launch/stop/reap record tracking
     │   ├── os_process.rs        Caller-liveness check (tasklist/PowerShell, ps)
-    │   └── commands/            One module per subcommand (launch, eval, screenshot, ...)
-    └── tests/src/
+    │   └── commands/
+    │       ├── mod.rs           Only `pub mod`/`mod`/`pub use` — no logic
+    │       ├── error.rs         CliError + Display + exit_code
+    │       ├── args.rs          expect_value, parse_value, validate_connect_args
+    │       ├── connection.rs    attach, attach_android
+    │       └── {launch,eval,...}.rs   One module per subcommand
+    └── tests/                   Auto-discovered by Cargo — no [[test]] entries in Cargo.toml
         └── cli_e2e_test.rs      Every browse subcommand, end to end
 ```
 
