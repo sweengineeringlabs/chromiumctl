@@ -2,7 +2,13 @@
 
 ## Overview
 
-chromiumctl is a synchronous CDP client library. Every operation — launching a browser, evaluating JavaScript, reading CSS — maps to one or more CDP messages sent over a persistent WebSocket connection. There is no async runtime; callers block on each command.
+`cdp-client` is a synchronous CDP client library. Every operation — launching a browser, evaluating JavaScript, reading CSS — maps to one or more CDP messages sent over a persistent WebSocket connection. There is no async runtime; callers block on each command.
+
+### Why "minimal"
+
+`cdp-client` implements a hand-written wrapper for exactly the CDP methods its consumers need (currently ~11, across `Page`, `Runtime`, `DOM`, `Input`, `Emulation`, `Performance`, `Fetch`, and `Browser`) — not code-generated bindings for the full protocol, which spans hundreds of methods across roughly 40 domains. "Minimal" describes that restraint on scope and dependencies (plain `tungstenite`, no async runtime, no `tokio`), not a limited feature set: the methods it does implement are enough to fully drive a browser — navigate, evaluate, screenshot, input, file-input injection, network mocking, performance metrics. New CDP surface is added when a real consumer needs it (see [Developer guide → Adding a new CDP method](../4-development/developer_guide.md#adding-a-new-cdp-method)), not speculatively.
+
+The `browsectl` CLI (binary `browse`) is a separate crate layered on top of `cdp-client` — it adds session tracking (`launch`/`stop`/`reap`) and CLI-level concerns (arg parsing, output formatting) but performs no CDP calls of its own that aren't exposed through the library first.
 
 ## Use cases
 
@@ -34,7 +40,7 @@ chromiumctl is a synchronous CDP client library. Every operation — launching a
                         │
                         ▼
 ┌──────────────────────────────────────────────────────┐
-│  chromiumctl                                         │
+│  cdp-client                                          │
 │                                                      │
 │  CdpClient::launch(url)                              │
 │    1. PlatformBrowserLocator::find()  → binary path  │
@@ -57,16 +63,21 @@ chromiumctl is a synchronous CDP client library. Every operation — launching a
 │  Runtime.evaluate                                    │
 │  Emulation.setDeviceMetricsOverride                  │
 │  Page.navigate                                       │
-│  DOM.*  /  CSS.*                                     │
+│  DOM.* (incl. setFileInputFiles)  /  Input.*         │
+│  Fetch.* (opt-in mocking)  /  Performance.*           │
 └──────────────────────────────────────────────────────┘
 ```
+
+### Shadow DOM piercing
+
+Every default `PageEvaluator` method that resolves a CSS selector (`get_computed_style`, `get_pseudo_style`, `get_bounding_rect`, and the CLI's `click`/`input`/`wait --selector`) embeds a shared recursive JS helper (`__cdp_client_deepQuerySelector`, in `api/js.rs`) instead of a bare `document.querySelector`. It descends into every *open* shadow root along the way; closed shadow roots remain unreachable, since CDP itself can't see into them without `DOM.getFlattenedDocument`. This is the default for every selector-based method — callers don't opt in.
 
 ## Layers
 
 The crate follows SEA (Service → Engine → Adapter) layering:
 
 ```
-main/src/
+scm/cdp-client/main/src/
 ├── lib.rs                  Public surface (re-exports from api/)
 ├── client.rs               CdpClient impl blocks + send_cdp_raw
 │

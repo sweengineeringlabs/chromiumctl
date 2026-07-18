@@ -1,6 +1,6 @@
 # RFC-0003: Orphaned Process Recovery
 
-**Status:** Proposed  
+**Status:** Implemented (shipped in 0.3.0)
 **Date:** 2026-07-16  
 **Author:** Amu Hlongwane  
 

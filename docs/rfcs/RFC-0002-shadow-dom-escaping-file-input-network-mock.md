@@ -1,6 +1,6 @@
 # RFC-0002: Shadow DOM support, consistent selector escaping, file-input command, network interception
 
-**Status:** Proposed
+**Status:** Implemented (shipped in 0.4.0)
 **Date:** 2026-07-16
 **Author:** Amu Hlongwane
 

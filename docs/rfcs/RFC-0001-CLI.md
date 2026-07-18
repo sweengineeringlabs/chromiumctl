@@ -1,6 +1,6 @@
 # RFC-0001: chromiumctl CLI
 
-**Status:** Proposed  
+**Status:** Implemented (shipped in 0.2.0)
 **Date:** 2026-06-27  
 **Author:** Amu Hlongwane  
 
