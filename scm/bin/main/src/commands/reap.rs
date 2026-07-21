@@ -1,5 +1,5 @@
-use crate::os_process::ProcessLocator;
-use crate::session::{now_unix_secs, SessionRecord, SessionStore};
+use crate::core::os_process::ProcessLocator;
+use crate::core::session::{now_unix_secs, SessionRecord, SessionStore};
 
 use super::{expect_value, CliError};
 

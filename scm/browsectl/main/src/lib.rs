@@ -24,7 +24,6 @@
 //! ```
 
 mod api;
-mod client;
 mod core;
 mod saf;
 

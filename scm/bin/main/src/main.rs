@@ -2,9 +2,9 @@ use std::env;
 use std::process;
 
 mod commands;
-mod help;
-mod os_process;
-mod session;
+mod core;
+
+use crate::core::help;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
