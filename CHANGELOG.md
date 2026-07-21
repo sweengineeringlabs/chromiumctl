@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-07-21
+
+### Fixed
+- `browsectl-bin`'s `no_orphan_src_files` fix (moving loose `src/` files into `core/`) activated previously-dormant `application_type = "binary"` structural checks; fixed all newly-surfaced findings:
+  - Free functions in `os_process.rs`/`session_store.rs` converted to associated functions on `ProcessLocator`/`SessionStore`; `help.rs`'s `print_help`/`print_version` wrapped in a new `Help` unit struct
+  - `core/session/{record,store}.rs` flattened to `core/session_record.rs` + `core/session_store.rs`
+  - `CliError` demoted from `pub` to `pub(crate)` — a binary crate has no external consumers for it to be a public API to
+  - Two invalid `@covers: SessionRecord` doc comments removed (the annotation only accepts function names, not struct names)
+
+### Added
+- `tests/help_int_test.rs` — dedicated coverage for `core/help.rs`'s CLI-visible output (moved out of `cli_e2e_test.rs`)
+- Inline serde round-trip tests for `SessionRecord`
+
+### Known limitations
+- `structure_matches_app_type`/`api_impl_public_tests_external` (both want a full trait-contract `api/` layer for the binary crate) and a circular conflict between `shared_prefix_grouping` and `api_layer_mirrors_core_domains` for `session_record.rs`/`session_store.rs` remain open — not fixed, see commit `fbec796` for details
+
 ## [0.5.1] — 2026-07-20
 
 ### Fixed
